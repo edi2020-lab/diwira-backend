@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express     = require('express');
+const path        = require('path');
 const cors        = require('cors');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
@@ -65,9 +66,17 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), env: process.env.NODE_ENV });
 });
 
-// ── 404 handler ───────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found.' });
+// ── Serve React frontend (dist/) ──────────────────────────────
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
+
+// ── React Router fallback — semua route non-API → index.html ──
+app.get('*', (req, res) => {
+  // Jika request untuk /api/*, kembalikan 404 JSON (bukan HTML)
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Endpoint not found.' });
+  }
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // ── Error handler ─────────────────────────────────────────────
