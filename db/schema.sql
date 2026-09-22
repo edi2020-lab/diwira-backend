@@ -55,11 +55,11 @@ CREATE TABLE IF NOT EXISTS admins (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── Seed: default superadmin ─────────────────────────────────
--- Password: Diwira@2026 (bcrypt, change after first login!)
+-- Password: Diwira@2026 (bcrypt cost 12 — change after first login!)
 INSERT IGNORE INTO admins (username, password, full_name, role)
 VALUES (
   'admin',
-  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4oY1YPIZ1G',
+  '$2a$12$jmFQw28iMMPSCWLFY6WsvObH1NA86oHCea.B27Hee4c0enF6SoFWm',
   'Super Admin Diwira',
   'superadmin'
 );
