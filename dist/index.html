@@ -5021,9 +5021,9 @@ window.gm_authFailure = function() {
 </script>
 
 <!-- Google Maps JavaScript API — Places + Distance Matrix -->
-<!-- Key is domain-restricted in Google Cloud Console for security -->
+<!-- Key injected server-side from environment variable (never stored in repo) -->
 <script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCipxE6Xmvv2cyFaN-V2ySqtTFiww9UzUM&libraries=places&callback=initDiwiraMaps&language=en&region=ID">
+  src="https://maps.googleapis.com/maps/api/js?key=__GOOGLE_MAPS_KEY__&libraries=places&callback=initDiwiraMaps&language=en&region=ID">
 </script>
 
 </body>
