@@ -2,7 +2,7 @@ const express   = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const pool      = require('../db/connection');
 const auth      = require('../middleware/auth');
-const { sendBookingNotification, sendGuestConfirmation } = require('../services/email');
+const { sendBookingNotification, sendGuestConfirmation, sendStatusChangeEmail } = require('../services/email');
 
 const router = express.Router();
 
@@ -46,6 +46,12 @@ router.post('/',
     const data = req.body;
     const booking_ref = generateRef();
 
+    // ── Auto-confirm rule: ≥ 6 hours before departure → confirmed ─
+    // Assume departure at 08:00 WITA (UTC+8)
+    const tourDateTime = new Date(`${data.tour_date}T08:00:00+08:00`);
+    const hoursUntil   = (tourDateTime - Date.now()) / 3600000;
+    const initialStatus = hoursUntil >= 6 ? 'confirmed' : 'pending';
+
     try {
       const [result] = await pool.query(
         `INSERT INTO bookings
@@ -53,8 +59,8 @@ router.post('/',
            adults, children, infants,
            adult_rate, child_rate, adult_subtotal, child_subtotal,
            subtotal, total, tier_label,
-           full_name, email, phone, promo_code, requests)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           full_name, email, phone, promo_code, requests, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           booking_ref,
           data.tour_id, data.tour_name, data.tour_date,
@@ -64,6 +70,7 @@ router.post('/',
           data.subtotal, data.total, data.tier_label ?? null,
           data.full_name, data.email, data.phone,
           data.promo_code ?? null, data.requests ?? null,
+          initialStatus,
         ]
       );
 
@@ -76,7 +83,10 @@ router.post('/',
       // Send emails (non-blocking — don't fail booking if email fails)
       Promise.all([
         sendBookingNotification(booking).catch(e => console.error('Admin email failed:', e.message)),
-        sendGuestConfirmation(booking).catch(e => console.error('Guest email failed:', e.message)),
+        (initialStatus === 'confirmed'
+          ? sendStatusChangeEmail(booking, 'confirmed').catch(e => console.error('Confirm email failed:', e.message))
+          : sendGuestConfirmation(booking).catch(e => console.error('Guest email failed:', e.message))
+        ),
       ]);
 
       return res.status(201).json({
@@ -179,6 +189,16 @@ router.patch('/:id/status', auth,
         [status, status_note ?? null, req.params.id]
       );
       if (result.affectedRows === 0) return res.status(404).json({ error: 'Booking not found.' });
+
+      // Send email for meaningful status changes (non-blocking)
+      if (['confirmed','completed','cancelled'].includes(status)) {
+        const [rows] = await pool.query('SELECT * FROM bookings WHERE id = ?', [req.params.id]);
+        if (rows[0]) {
+          sendStatusChangeEmail(rows[0], status, status_note || '')
+            .catch(e => console.error('Status email failed:', e.message));
+        }
+      }
+
       return res.json({ message: `Status updated to ${status}.`, status });
     } catch (err) {
       console.error('PATCH /bookings/:id/status error:', err);
