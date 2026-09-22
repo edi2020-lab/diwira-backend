@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express     = require('express');
 const path        = require('path');
+const fs          = require('fs');
 const cors        = require('cors');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
@@ -15,6 +16,29 @@ const mapsRoutes         = require('./routes/maps');
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
+
+// ── Homepage: inject Maps API key from env at serve time ──────
+// The dist/index.html contains __GOOGLE_MAPS_KEY__ placeholder.
+// We replace it with process.env.GOOGLE_MAPS_API_KEY so the
+// actual key is NEVER stored in the git repository.
+const HOMEPAGE_PATH = path.join(__dirname, 'dist', 'index.html');
+let _homepageCache  = null;  // cache after first read
+
+function serveHomepage(req, res) {
+  try {
+    if (!_homepageCache) {
+      const raw = fs.readFileSync(HOMEPAGE_PATH, 'utf8');
+      const key = process.env.GOOGLE_MAPS_API_KEY || '';
+      _homepageCache = raw.replace(/__GOOGLE_MAPS_KEY__/g, key);
+      if (!key) console.warn('⚠️  GOOGLE_MAPS_API_KEY not set — Maps autocomplete disabled');
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(_homepageCache);
+  } catch (e) {
+    console.error('serveHomepage error:', e.message);
+    res.status(500).send('Page unavailable.');
+  }
+}
 
 // ── Security ──────────────────────────────────────────────────
 app.use(helmet({
@@ -57,6 +81,9 @@ app.use('/api/bookings', (req, res, next) => {
 // ── Serve uploaded images ─────────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── Homepage route (key injected) — BEFORE express.static ─────
+app.get('/', serveHomepage);
+
 // ── API Routes ────────────────────────────────────────────────
 app.use('/api/auth',         authRoutes);
 app.use('/api/bookings',     bookingRoutes);
@@ -71,8 +98,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), env: process.env.NODE_ENV });
 });
 
-// ── Serve React frontend static files ─────────────────────────
-app.use(express.static(path.join(__dirname, 'dist')));
+// ── Static files (index:false prevents auto-serving index.html) ─
+app.use(express.static(path.join(__dirname, 'dist'), { index: false }));
 
 // ── SPA fallbacks ─────────────────────────────────────────────
 app.get('/booking/*', (req, res) => {
@@ -81,8 +108,13 @@ app.get('/booking/*', (req, res) => {
 app.get('/admin/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'admin', 'index.html'));
 });
+
+// Homepage catch-all (deep-links like /#section, /about, etc.)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Not found.' });
+  }
+  serveHomepage(req, res);
 });
 
 // ── Error handler ─────────────────────────────────────────────
@@ -96,6 +128,7 @@ app.use((err, req, res, _next) => {
 // ── Start ─────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🚀 Diwira API running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
+  console.log(`   Maps API key: ${process.env.GOOGLE_MAPS_API_KEY ? '✅ set' : '❌ NOT SET'}`);
 });
 
 module.exports = app;
