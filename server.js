@@ -43,7 +43,23 @@ function serveHomepage(req, res) {
 // ── Security ──────────────────────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow /uploads images
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+                    "maps.googleapis.com", "*.googleapis.com"],
+      styleSrc:    ["'self'", "'unsafe-inline'",
+                    "fonts.googleapis.com", "*.googleapis.com"],
+      imgSrc:      ["'self'", "data:", "blob:",
+                    "*.googleapis.com", "*.gstatic.com", "maps.gstatic.com"],
+      connectSrc:  ["'self'", "*.googleapis.com", "maps.googleapis.com"],
+      fontSrc:     ["'self'", "fonts.gstatic.com", "fonts.googleapis.com"],
+      frameSrc:    ["'none'"],
+      objectSrc:   ["'none'"],
+    },
+  },
 }));
+
 
 // ── CORS ──────────────────────────────────────────────────────
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
