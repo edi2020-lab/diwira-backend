@@ -11,6 +11,7 @@ const tourRoutes         = require('./routes/tours');
 const testimonialRoutes  = require('./routes/testimonials');
 const settingsRoutes     = require('./routes/settings');
 const destinationRoutes  = require('./routes/destinations');
+const mapsRoutes         = require('./routes/maps');
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
@@ -63,6 +64,7 @@ app.use('/api/tours',        tourRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/settings',     settingsRoutes);
 app.use('/api/destinations', destinationRoutes);
+app.use('/api/maps',         mapsRoutes);
 
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
