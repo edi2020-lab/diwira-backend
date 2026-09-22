@@ -66,10 +66,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), env: process.env.NODE_ENV });
 });
 
-// ── Serve React frontend static files ─────────────────────────
+// ── Serve semua static files dari dist/ ───────────────────────
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// ── React Router fallback ─────────────────────────────────────
+// ── SPA fallback: /booking/* → booking/index.html ─────────────
+app.get('/booking/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'booking', 'index.html'));
+});
+
+// ── SPA fallback: /admin/* → admin/index.html ─────────────────
+app.get('/admin/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'admin', 'index.html'));
+});
+
+// ── Homepage fallback: semua route lain → index.html utama ────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
