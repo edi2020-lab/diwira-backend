@@ -170,4 +170,52 @@ async function sendGuestConfirmation(booking) {
   });
 }
 
-module.exports = { sendBookingNotification, sendGuestConfirmation };
+/**
+ * Send status change notification to guest.
+ * Called automatically when admin updates booking status.
+ */
+async function sendStatusChangeEmail(booking, newStatus, note = '') {
+  const icons    = { confirmed:'✅', completed:'🎉', cancelled:'❌' };
+  const subjects = {
+    confirmed: `✅ Your Booking is Confirmed — ${booking.tour_name}`,
+    completed: `🎉 Thank You for Traveling with Diwira — ${booking.tour_name}`,
+    cancelled: `❌ Booking Cancelled — ${booking.booking_ref}`,
+  };
+  const messages = {
+    confirmed: `<p>Great news! Your booking has been <strong style="color:#0d9488;">confirmed</strong>. Our team will contact you via WhatsApp at <strong>${booking.phone}</strong> with final details.</p>`,
+    completed: `<p>Thank you for choosing Diwira Travel! We hope you had a wonderful experience in Bali. We'd love a review!</p>`,
+    cancelled: `<p>We're sorry — your booking has been <strong style="color:#dc2626;">cancelled</strong>. Please contact us if you have questions.</p>`,
+  };
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/></head>
+  <body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:24px;">
+    <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+      <div style="background:#0d9488;padding:24px 28px;">
+        <h2 style="margin:0;color:#fff;font-size:20px;">${icons[newStatus]||'📋'} Booking Update — Diwira Travel</h2>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Ref: <strong>${booking.booking_ref}</strong></p>
+      </div>
+      <div style="padding:28px;color:#374151;">
+        <p>Dear <strong>${booking.full_name}</strong>,</p>
+        ${messages[newStatus]||'<p>Your booking status has been updated.</p>'}
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
+          <tr style="background:#f9fafb;"><td style="padding:10px 14px;color:#6b7280;width:40%;">Tour</td><td style="padding:10px 14px;font-weight:600;">${booking.tour_name}</td></tr>
+          <tr><td style="padding:10px 14px;color:#6b7280;">Tour Date</td><td style="padding:10px 14px;">${booking.tour_date}</td></tr>
+          <tr style="background:#f9fafb;"><td style="padding:10px 14px;color:#6b7280;">Total</td><td style="padding:10px 14px;font-weight:700;">$${parseFloat(booking.total).toFixed(2)}</td></tr>
+          <tr><td style="padding:10px 14px;color:#6b7280;">New Status</td><td style="padding:10px 14px;font-weight:700;text-transform:uppercase;">${newStatus}</td></tr>
+        </table>
+        ${note ? `<div style="background:#f0fdf4;border-left:4px solid #0d9488;padding:12px 16px;margin:16px 0;font-size:13px;"><strong>Note:</strong> ${note}</div>` : ''}
+        <p style="font-size:13px;">Questions? WhatsApp: <a href="https://wa.me/6282147242621">+6282147242621</a> · Email: <a href="mailto:info.diwira@gmail.com">info.diwira@gmail.com</a></p>
+      </div>
+      <div style="background:#f9fafb;padding:16px 28px;text-align:center;font-size:11px;color:#9ca3af;">PT. Diwira Wisata Indonesia · Bali, Indonesia</div>
+    </div>
+  </body></html>`;
+
+  await transporter.sendMail({
+    from:    `"Diwira Travel" <${process.env.EMAIL_USER}>`,
+    to:      booking.email,
+    subject: subjects[newStatus] || `Booking Update — ${booking.booking_ref}`,
+    html,
+  });
+}
+
+module.exports = { sendBookingNotification, sendGuestConfirmation, sendStatusChangeEmail };
