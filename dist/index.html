@@ -1390,6 +1390,34 @@
     .tnc-footer { padding: 1.25rem 1.75rem; border-top: 1px solid var(--fog); display: flex; justify-content: flex-end; background: var(--linen); border-radius: 0 0 20px 20px; }
     .tnc-accept-btn { background: var(--jungle); color: #fff; border: none; padding: 10px 24px; border-radius: 100px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
     .tnc-accept-btn:hover { background: var(--forest); }
+
+/* ── Airport Transfer Autocomplete ──────────────────────── */
+.at-autocomplete-wrap { position: relative; }
+.at-autocomplete-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 9999;
+  background: #fff; border: 1px solid #e0e0e0; border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15); overflow: hidden;
+  max-height: 280px; overflow-y: auto; margin-top: 4px;
+  display: none;
+}
+.at-autocomplete-list.open { display: block; }
+.at-ac-item {
+  padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f5f5f5;
+  transition: background 0.15s;
+}
+.at-ac-item:last-child { border-bottom: none; }
+.at-ac-item:hover, .at-ac-item.active { background: #f0f7f3; }
+.at-ac-item-main { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.at-ac-item-sub  { font-size: 12px; color: #888; margin-top: 2px; }
+.at-dist-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #e8f5ee; color: #2d7a4f; border-radius: 8px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600; margin-top: 6px;
+}
+.at-dist-loading {
+  font-size: 12px; color: #888; margin-top: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
   </style>
 </head>
 
@@ -1774,8 +1802,20 @@
         <div class="at-pane active" id="at2Pane1">
           <div class="at-pane-title">📍 Trip Details &amp; Price Estimate</div>
           <div class="at-grid">
-            <div class="at-field full"><label>Pickup Location *</label><input type="text" id="at2Pickup" placeholder="e.g. Ngurah Rai International Airport"/><div class="at-field-err" id="at2PickupErr"></div></div>
-            <div class="at-field full"><label>Drop-off Location *</label><input type="text" id="at2Dropoff" placeholder="e.g. Hotel ARTOTEL Seminyak, Bali"/><div class="at-field-err" id="at2DropoffErr"></div></div>
+            <div class="at-field full at-autocomplete-wrap">
+              <label>Pickup Location *</label>
+              <input type="text" id="at2Pickup" placeholder="e.g. Ngurah Rai International Airport" autocomplete="off"/>
+              <div class="at-autocomplete-list" id="at2PickupList"></div>
+              <div class="at-field-err" id="at2PickupErr"></div>
+            </div>
+            <div class="at-field full at-autocomplete-wrap">
+              <label>Drop-off Location *</label>
+              <input type="text" id="at2Dropoff" placeholder="e.g. Hotel ARTOTEL Seminyak, Bali" autocomplete="off"/>
+              <div class="at-autocomplete-list" id="at2DropoffList"></div>
+              <div class="at-field-err" id="at2DropoffErr"></div>
+              <div id="at2DistBadge" style="display:none;" class="at-dist-badge">📍 <span id="at2DistBadgeText"></span></div>
+              <div id="at2DistLoading" style="display:none;" class="at-dist-loading"><span style="animation:spin 1s linear infinite;display:inline-block;">⟳</span> Calculating distance...</div>
+            </div>
             <div class="at-field"><label>Date *</label><input type="date" id="at2Date"/><div class="at-field-err" id="at2DateErr"></div></div>
             <div class="at-field"><label>Pickup Time *</label><input type="time" id="at2Time" step="900"/><div class="at-field-err" id="at2TimeErr"></div><div id="at2EarliestInfo" style="font-size:11px;color:#4a7c5f;margin-top:5px;line-height:1.5;display:flex;align-items:flex-start;gap:4px;">&#9432; Bookings require at least <strong>4 hours</strong> notice. <span id="at2EarliestText">Loading...</span></div></div>
             <div class="at-field"><label>Passengers *</label>
@@ -1802,12 +1842,7 @@
               </select>
               <div class="at-field-err" id="at2BagErr"></div>
             </div>
-            <div class="at-field full">
-              <label>Estimated Distance (km) *</label>
-              <input type="number" id="at2DistKm" min="1" max="500" step="0.5" placeholder="e.g. 25 — check on Google Maps"/>
-              <div class="at-field-err" id="at2DistKmErr"></div>
-              <div style="font-size:11px;color:var(--light);margin-top:4px;line-height:1.5;">💡 Open Google Maps → tap your route → note the distance.</div>
-            </div>
+
           </div>
           <div class="at-price-card" id="at2PriceCard" style="display:none;">
             <div class="at-price-header">💰 Estimated Transfer Price<span>Live calculation — updates as you type</span></div>
@@ -1818,7 +1853,7 @@
               <div class="at-price-row surcharge" id="at2RowBag" style="display:none;"><span class="label">🧳 Baggage surcharge</span><span class="amount" id="at2BagAmt">—</span></div>
               <hr class="at-price-divider"/>
               <div class="at-price-total-row"><span class="at-price-total-label">Total Estimate</span><span class="at-price-total-amount" id="at2Total">—</span></div>
-              <div class="at-price-note">✳️ Estimate based on distance entered. Final price confirmed by our team via WhatsApp before your trip.</div>
+              <div class="at-price-note">✳️ Estimate based on Google Maps route. Final price confirmed by our team via WhatsApp before your trip.</div>
             </div>
           </div>
           <div class="at-price-custom" id="at2CustomQuote" style="display:none;">🚌 <strong>Custom Quote Required</strong> — For 6+ passengers or bags, we'll arrange a larger vehicle. Team contacts you within 2 hours.</div>
@@ -3050,7 +3085,7 @@ function closeMobile() {
   function fmt2(n) { return '$' + n.toFixed(2); }
 
   function updatePrice2() {
-    var km   = parseFloat(document.getElementById('at2DistKm').value) || 0;
+    var km   = parseFloat(window._atDistKm) || 0;
     var pax  = parseInt(document.getElementById('at2Pax').value)      || 0;
     var bags = parseInt(document.getElementById('at2Bag').value)      || 0;
     var card = document.getElementById('at2PriceCard');
@@ -3073,7 +3108,7 @@ function closeMobile() {
     document.getElementById('at2Total').textContent = fmt2(r.total);
   }
 
-  ['at2DistKm','at2Pax','at2Bag'].forEach(function(id) {
+  ['at2Pax','at2Bag'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('input', updatePrice2);
     if (el) el.addEventListener('change', updatePrice2);
@@ -3115,7 +3150,7 @@ function closeMobile() {
     }
     function clr2(id) { var el = document.getElementById(id); if (el) el.textContent = ''; }
     if (step2 === 1) {
-      clr2('at2PickupErr'); clr2('at2DropoffErr'); clr2('at2DateErr'); clr2('at2TimeErr'); clr2('at2PaxErr'); clr2('at2DistKmErr');
+      clr2('at2PickupErr'); clr2('at2DropoffErr'); clr2('at2DateErr'); clr2('at2TimeErr'); clr2('at2PaxErr');
       if (!document.getElementById('at2Pickup').value.trim()) err2('at2PickupErr','Please enter a pickup location');
       if (!document.getElementById('at2Dropoff').value.trim()) err2('at2DropoffErr','Please enter a drop-off location');
       var dateVal = document.getElementById('at2Date').value;
@@ -3137,9 +3172,7 @@ function closeMobile() {
         }
       }
       if (!document.getElementById('at2Pax').value) err2('at2PaxErr','Please select passenger count');
-      var km = parseFloat(document.getElementById('at2DistKm').value);
-      if (!km || km <= 0) err2('at2DistKmErr','Please enter a valid distance');
-      else if (km > 500) err2('at2DistKmErr','Distance exceeds 500km — please contact us directly');
+      if (!window._atDistKm || window._atDistKm <= 0) err2('at2PickupErr','Please select pickup and drop-off locations to calculate distance');
     }
     if (step2 === 2) {
       clr2('at2FlightErr'); clr2('at2FlightTypeErr');
@@ -3158,7 +3191,7 @@ function closeMobile() {
   }
 
   function fillSummary2() {
-    var km = document.getElementById('at2DistKm').value;
+    var km = window._atDistKm || 0;
     var pax = parseInt(document.getElementById('at2Pax').value) || 0;
     var bags = parseInt(document.getElementById('at2Bag').value) || 0;
     var r = calculatePrice2(parseFloat(km)||0, pax, bags);
@@ -3178,7 +3211,9 @@ function closeMobile() {
   }
 
   function sendWA2() {
-    var km = document.getElementById('at2DistKm').value;
+    var km = window._atDistKm || 0;
+    var distText = window._atDistText || (km ? km + ' km' : '—');
+    var durText  = window._atDurText  || '';
     var pax = parseInt(document.getElementById('at2Pax').value) || 0;
     var bags = parseInt(document.getElementById('at2Bag').value) || 0;
     var r = calculatePrice2(parseFloat(km)||0, pax, bags);
@@ -3189,7 +3224,7 @@ function closeMobile() {
       + '📅 *Date:* ' + (document.getElementById('at2Date').value||'—') + ' at ' + (document.getElementById('at2Time').value||'—') + '\n'
       + '👥 *Passengers:* ' + (document.getElementById('at2Pax').options[document.getElementById('at2Pax').selectedIndex].text) + '\n'
       + '🧳 *Luggage:* ' + (document.getElementById('at2Bag').options[document.getElementById('at2Bag').selectedIndex].text) + '\n'
-      + '📏 *Distance:* ' + km + ' km\n'
+      + '📏 *Distance:* ' + distText + (durText ? ' (' + durText + ')' : '') + '\n'
       + '✈️ *Flight:* ' + (document.getElementById('at2Flight').value||'—') + ' (' + (document.getElementById('at2FlightType').options[document.getElementById('at2FlightType').selectedIndex].text) + ')\n'
       + '✈️ *Airline:* ' + (document.getElementById('at2Airline').value||'—') + '\n\n'
       + '👤 *Name:* ' + document.getElementById('at2First').value + ' ' + document.getElementById('at2Last').value + '\n'
@@ -4517,6 +4552,170 @@ function closeWisataModal() {
   // Default: show first 6 (All)
   setAdvActive(btnAll);
   filterAdv('all');
+})();
+
+/* ── Airport Transfer Autocomplete + Distance ── */
+(function() {
+  var SESSION = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  var acCache = {};
+  var debounceTimer;
+
+  function debounce(fn, delay) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(fn, delay);
+  }
+
+  function renderList(listEl, predictions, onSelect) {
+    listEl.innerHTML = '';
+    if (!predictions.length) { listEl.classList.remove('open'); return; }
+    predictions.forEach(function(p, i) {
+      var item = document.createElement('div');
+      item.className = 'at-ac-item';
+      item.innerHTML =
+        '<div class="at-ac-item-main">' + p.main_text + '</div>' +
+        (p.secondary ? '<div class="at-ac-item-sub">' + p.secondary + '</div>' : '');
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        onSelect(p.description);
+        listEl.classList.remove('open');
+      });
+      listEl.appendChild(item);
+    });
+    listEl.classList.add('open');
+  }
+
+  function setupAutocomplete(inputId, listId, onSelect) {
+    var input = document.getElementById(inputId);
+    var list  = document.getElementById(listId);
+    if (!input || !list) return;
+
+    input.addEventListener('input', function() {
+      var q = input.value.trim();
+      if (q.length < 2) { list.classList.remove('open'); return; }
+      if (acCache[q]) { renderList(list, acCache[q], onSelect); return; }
+      debounce(function() {
+        fetch('/api/maps/autocomplete?input=' + encodeURIComponent(q) + '&sessiontoken=' + SESSION)
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            acCache[q] = data.predictions || [];
+            renderList(list, acCache[q], onSelect);
+          })
+          .catch(function() {});
+      }, 300);
+    });
+
+    input.addEventListener('blur', function() {
+      setTimeout(function() { list.classList.remove('open'); }, 200);
+    });
+    input.addEventListener('focus', function() {
+      if (list.children.length > 0) list.classList.add('open');
+    });
+  }
+
+  var resolvedPickup  = '';
+  var resolvedDropoff = '';
+
+  function updateDistanceDisplay(km, text, durationText, price) {
+    var badge   = document.getElementById('at2DistBadge');
+    var badgeTxt= document.getElementById('at2DistBadgeText');
+    var loading = document.getElementById('at2DistLoading');
+    if (loading) loading.style.display = 'none';
+    if (badge && badgeTxt) {
+      badgeTxt.textContent = text + ' • ' + durationText;
+      badge.style.display = 'inline-flex';
+    }
+    // Update price card
+    var card = document.getElementById('at2PriceCard');
+    if (card && price) {
+      card.style.display = '';
+      var el = function(id, val) {
+        var e = document.getElementById(id); if (e) e.textContent = val;
+      };
+      el('at2Dist', text);
+      el('at2Base', '$' + price.base.toFixed(2));
+      var paxRow = document.getElementById('at2RowPax');
+      var bagRow = document.getElementById('at2RowBag');
+      if (price.paxSurcharge > 0) {
+        el('at2PaxAmt', '+$' + price.paxSurcharge.toFixed(2));
+        if (paxRow) paxRow.style.display = '';
+      } else { if (paxRow) paxRow.style.display = 'none'; }
+      if (price.bagSurcharge > 0) {
+        el('at2BagAmt', '+$' + price.bagSurcharge.toFixed(2));
+        if (bagRow) bagRow.style.display = '';
+      } else { if (bagRow) bagRow.style.display = 'none'; }
+      el('at2Total', '$' + price.total.toFixed(2));
+    }
+    // Update at2DistKm hidden value for any remaining logic
+    var distInput = document.getElementById('at2DistKm');
+    if (distInput) distInput.value = km;
+  }
+
+  function calcDistance() {
+    if (!resolvedPickup || !resolvedDropoff) return;
+    var pax  = (document.getElementById('at2Pax')  || {}).value || 1;
+    var bags = (document.getElementById('at2Bag')  || {}).value || 0;
+    var loading = document.getElementById('at2DistLoading');
+    var badge   = document.getElementById('at2DistBadge');
+    if (loading) loading.style.display = 'flex';
+    if (badge)  badge.style.display  = 'none';
+    fetch('/api/maps/distance?origin=' + encodeURIComponent(resolvedPickup) +
+          '&destination=' + encodeURIComponent(resolvedDropoff) +
+          '&pax=' + pax + '&bags=' + bags)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) { if (loading) loading.style.display = 'none'; return; }
+        updateDistanceDisplay(data.distance_km, data.distance_text, data.duration_text, data.price);
+        // Store for form submission
+        window._atDistKm  = data.distance_km;
+        window._atDistText= data.distance_text;
+        window._atDurText = data.duration_text;
+        window._atPrice   = data.price;
+        window._atOriginAddr = data.origin_address;
+        window._atDestAddr   = data.destination_address;
+      })
+      .catch(function() { if (loading) loading.style.display = 'none'; });
+  }
+
+  function onPickupSelect(val) {
+    var input = document.getElementById('at2Pickup');
+    if (input) input.value = val;
+    resolvedPickup = val;
+    calcDistance();
+  }
+  function onDropoffSelect(val) {
+    var input = document.getElementById('at2Dropoff');
+    if (input) input.value = val;
+    resolvedDropoff = val;
+    calcDistance();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    setupAutocomplete('at2Pickup',  'at2PickupList',  onPickupSelect);
+    setupAutocomplete('at2Dropoff', 'at2DropoffList', onDropoffSelect);
+
+    // Recalculate when pax/bag changes
+    ['at2Pax','at2Bag'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', function() {
+        if (resolvedPickup && resolvedDropoff) calcDistance();
+      });
+    });
+
+    // Also allow typing full address and pressing Tab/Enter
+    ['at2Pickup','at2Dropoff'].forEach(function(id) {
+      var inp = document.getElementById(id);
+      if (!inp) return;
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          var val = inp.value.trim();
+          if (!val) return;
+          if (id === 'at2Pickup') { resolvedPickup = val; }
+          else                    { resolvedDropoff = val; }
+          calcDistance();
+        }
+      });
+    });
+  });
 })();
 
 /* ── Airport Transfer: 4-Hour Minimum Pickup Validation ─────────────────── */
