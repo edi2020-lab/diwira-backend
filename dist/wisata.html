@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Destinasi Wisata Bali | Diwira Travel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --jungle: #1e3d2f; --forest: #2d5a3d; --leaf: #4a7c5f; --sage: #7aaa8a;
+      --moss: #a8c5a0; --clay: #b85c38; --rust: #c96d45; --sand: #e8d5b0;
+      --cream: #f5efe3; --linen: #faf6ee; --fog: #e8eef2;
+      --dark: #1a1a18; --mid: #4a4a42; --light: #8a8a7e;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--linen); color: var(--dark); overflow-x: hidden; }
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* NAVBAR */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(30,61,47,0.97); backdrop-filter: blur(10px);
+      padding: 0 clamp(1rem, 4vw, 3rem); height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 600;
+      color: #fff; letter-spacing: -0.02em;
+    }
+    .nav-brand span { color: var(--sage); }
+    .nav-back {
+      color: var(--moss); font-size: 14px; font-weight: 500;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.2s;
+    }
+    .nav-back:hover { color: #fff; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, var(--jungle) 0%, var(--forest) 60%, #2a5045 100%);
+      padding: clamp(3rem, 8vw, 6rem) clamp(1.5rem, 5vw, 4rem);
+      text-align: center;
+    }
+    .hero-eyebrow {
+      font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--sage); font-weight: 600; margin-bottom: 1rem;
+    }
+    .hero-title {
+      font-family: 'Fraunces', serif; font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 600; color: #fff; line-height: 1.15; margin-bottom: 1rem;
+    }
+    .hero-sub { font-size: 1rem; color: var(--moss); max-width: 540px; margin: 0 auto; line-height: 1.6; }
+
+    /* SEARCH BAR */
+    .search-wrap {
+      max-width: 480px; margin: 2rem auto 0;
+      display: flex; gap: 8px;
+    }
+    #searchInput {
+      flex: 1; padding: 11px 16px; border-radius: 10px; border: none;
+      font-size: 14px; font-family: inherit;
+      background: rgba(255,255,255,0.12); color: #fff;
+    }
+    #searchInput::placeholder { color: var(--moss); }
+    #searchInput:focus { outline: 2px solid var(--sage); background: rgba(255,255,255,0.18); }
+
+    /* FILTER CHIPS */
+    .filter-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      max-width: 1200px; margin: 2.5rem auto 0;
+      padding: 0 clamp(1rem, 3vw, 2rem);
+    }
+    .fchip {
+      padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      border: 1.5px solid var(--sand); color: var(--mid);
+      background: #fff; cursor: pointer; transition: all 0.2s;
+    }
+    .fchip.active, .fchip:hover { background: var(--jungle); border-color: var(--jungle); color: #fff; }
+
+    /* GRID */
+    .wisata-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1200px; margin: 2.5rem auto;
+      padding: 0 clamp(1rem, 3vw, 2rem);
+    }
+    @media (max-width: 1024px) { .wisata-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 700px)  { .wisata-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+    @media (max-width: 400px)  { .wisata-grid { grid-template-columns: 1fr; } }
+
+    .wcard {
+      background: #fff; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
+    }
+    .wcard:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
+    .wcard-img {
+      aspect-ratio: 1; position: relative; overflow: hidden;
+    }
+    .wcard-img img { transition: transform 0.4s ease; }
+    .wcard:hover .wcard-img img { transform: scale(1.05); }
+    .wcard-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(30,61,47,0.65) 0%, transparent 55%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .wcard:hover .wcard-overlay { opacity: 1; }
+    .wcard-see {
+      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      color: #fff; font-size: 12px; font-weight: 600; opacity: 0;
+      transition: opacity 0.3s; white-space: nowrap;
+    }
+    .wcard:hover .wcard-see { opacity: 1; }
+    .wcard-body { padding: 10px 12px 12px; }
+    .wcard-badge {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 20px; color: #fff;
+      margin-bottom: 5px;
+    }
+    .wcard-name {
+      font-family: 'Fraunces', serif; font-size: 0.95rem;
+      font-weight: 600; color: var(--dark); line-height: 1.3;
+    }
+
+    .badge-Pantai   { background: #2e86c1; }
+    .badge-Pura     { background: #7d3c98; }
+    .badge-Alam     { background: #1e8449; }
+    .badge-Budaya   { background: #b7950b; }
+    .badge-Hiburan  { background: #c0392b; }
+
+    /* Count display */
+    #placeCount {
+      text-align: center; font-size: 13px; color: var(--light);
+      margin-top: 0.5rem;
+    }
+
+    /* MODAL */
+    #wisataOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      z-index: 9999; display: flex; align-items: flex-start; justify-content: center;
+      padding: 2rem 1rem; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease; overflow-y: auto;
+    }
+    #wisataOverlay.open { opacity: 1; pointer-events: all; }
+    #wisataModal {
+      background: #fff; border-radius: 20px;
+      max-width: 720px; width: 100%; overflow: hidden;
+      position: relative; transform: translateY(30px);
+      transition: transform 0.35s ease; margin: auto;
+    }
+    #wisataOverlay.open #wisataModal { transform: translateY(0); }
+    #wisataClose {
+      position: absolute; top: 14px; right: 16px; z-index: 10;
+      background: rgba(0,0,0,0.45); border: none; color: #fff;
+      font-size: 18px; width: 34px; height: 34px; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    #wisataClose:hover { background: var(--clay); }
+    .wisata-img-strip {
+      display: flex; gap: 6px; overflow-x: auto; padding: 12px;
+      background: #f5f5f5; scrollbar-width: thin;
+    }
+    .wisata-img-strip img {
+      height: 110px; min-width: 160px; object-fit: cover;
+      border-radius: 8px; flex-shrink: 0;
+    }
+    .wisata-modal-body { padding: 1.5rem 1.75rem 2rem; }
+    .wisata-modal-badge { margin-bottom: 0.5rem; }
+    .wisata-modal-title {
+      font-family: 'Fraunces', serif; font-size: 1.55rem;
+      font-weight: 600; color: var(--dark); margin-bottom: 0.75rem;
+    }
+    .wisata-modal-meta {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      font-size: 13px; color: var(--mid); margin-bottom: 1rem;
+      padding-bottom: 1rem; border-bottom: 1px solid var(--fog);
+    }
+    .wisata-modal-meta span { display: flex; align-items: center; gap: 5px; }
+    .wisata-modal-desc { font-size: 14px; color: var(--mid); line-height: 1.75; margin-bottom: 1.25rem; }
+    .wisata-modal-tip {
+      background: var(--cream); border-left: 4px solid var(--clay);
+      padding: 10px 14px; border-radius: 0 8px 8px 0;
+      font-size: 13px; color: var(--mid); font-style: italic; margin-bottom: 1.5rem;
+    }
+    .wisata-book-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #25D366; color: #fff; border: none; border-radius: 10px;
+      padding: 12px 22px; font-size: 15px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+    }
+    .wisata-book-btn:hover { background: #1aa851; }
+
+    /* FOOTER */
+    footer {
+      background: var(--jungle); color: var(--moss);
+      text-align: center; padding: 2.5rem 1.5rem;
+      margin-top: 4rem; font-size: 14px;
+    }
+    footer .foot-brand {
+      font-family: 'Fraunces', serif; font-size: 1.4rem; color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    footer a { color: var(--sage); }
+    footer a:hover { color: #fff; }
+
+    /* No results */
+    #noResults {
+      display: none; text-align: center; padding: 3rem 1rem;
+      color: var(--light); font-size: 15px;
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-brand">Diwira<span>Travel</span></div>
+  <a href="diwira-travel.html" class="nav-back">&#x2190; Back to Home</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">&#x1F4CD; Explore Bali</div>
+  <h1 class="hero-title">Destinasi Wisata<br/>Bali</h1>
+  <p class="hero-sub">75 tempat wisata terbaik di Bali — lengkap dengan jam buka, tiket, dan tips praktis dari tim lokal kami.</p>
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="&#x1F50D; Cari destinasi..." oninput="filterWisata()" />
+  </div>
+</div>
+
+<!-- FILTER CHIPS -->
+<div class="filter-row" id="filterRow">
+  <button class="fchip active" onclick="setFilter('all', this)">Semua</button>
+  <button class="fchip" onclick="setFilter('Pantai', this)">&#x1F3D6; Pantai</button>
+  <button class="fchip" onclick="setFilter('Pura', this)">&#x26E9; Pura</button>
+  <button class="fchip" onclick="setFilter('Alam', this)">&#x1F333; Alam</button>
+  <button class="fchip" onclick="setFilter('Budaya', this)">&#x1F3AD; Budaya</button>
+  <button class="fchip" onclick="setFilter('Hiburan', this)">&#x1F3A1; Hiburan</button>
+</div>
+
+<!-- GRID -->
+<div class="wisata-grid" id="wisataGrid">
+  <div id="noResults">Tidak ada destinasi yang cocok dengan pencarian Anda.</div>
+</div>
+<p id="placeCount"></p>
+
+<!-- MODAL -->
+<div id="wisataOverlay">
+  <div id="wisataModal">
+    <button id="wisataClose" onclick="closeModal()" aria-label="Tutup">&#x2715;</button>
+    <div class="wisata-img-strip" id="wisataImgStrip"></div>
+    <div class="wisata-modal-body">
+      <div class="wisata-modal-badge"><span id="wisataModalBadge" class="wcard-badge"></span></div>
+      <div class="wisata-modal-title" id="wisataModalTitle"></div>
+      <div class="wisata-modal-meta" id="wisataModalMeta"></div>
+      <div class="wisata-modal-desc" id="wisataModalDesc"></div>
+      <div class="wisata-modal-tip" id="wisataModalTip"></div>
+      <a id="wisataBookBtn" class="wisata-book-btn" href="#" target="_blank">&#x1F4AC; Book a Tour via WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-brand">Diwira Travel</div>
+  <p>PT. Diwira Wisata Indonesia &mdash; Jl. Pantai Kelating, Tabanan, Bali</p>
+  <p style="margin-top:0.5rem;">
+    <a href="https://wa.me/6282147242621">&#x1F4AC; WhatsApp</a> &nbsp;|&nbsp;
+    <a href="mailto:info.diwira@gmail.com">&#x2709; info.diwira@gmail.com</a> &nbsp;|&nbsp;
+    <a href="diwira-travel.html">&#x2190; Kembali ke Beranda</a>
+  </p>
+</footer>
+
+<script>
+const WISATA = [
+  {id:'tanah-lot', name:'Tanah Lot', cat:'Pura', hours:'07:00–19:00', admission:'IDR 75.000', tip:'Datang sore hari untuk menikmati sunset spektakuler di atas batu karang.',
+   desc:'Tanah Lot adalah salah satu pura terpenting di Bali yang berdiri di atas batu karang di tepi Samudra Hindia. Nama Tanah Lot berasal dari kata tanah yang berarti daratan dan lot yang berarti laut. Pura ini didirikan oleh Dang Hyang Nirartha pada abad ke-16. Dipercaya bahwa ular-ular laut suci menjaga kaki batu karang pura ini. Kawasan ini dikelilingi oleh sawah hijau dan pantai berpasir dengan warung-warung seni dan restoran yang menawarkan pemandangan laut yang menakjubkan.',
+   imgs:['1536152919e6e3ad','1604999333679-b86d54738315','1504681015319-f9ba5f64faf8','1558618666-fcd25c85cd64','1506905925346-21bda4d32df4']},
+  {id:'bedugul', name:'Bedugul', cat:'Alam', hours:'08:00–18:00', admission:'IDR 30.000', tip:'Bawa jaket — kawasan ini berada di ketinggian 1.500 mdpl dan cukup dingin.',
+   desc:'Bedugul adalah kawasan wisata dataran tinggi yang terletak di Kabupaten Tabanan pada ketinggian sekitar 1.500 meter. Kawasan ini terkenal dengan Pura Ulun Danu Beratan yang berdiri di tepi Danau Beratan dan menjadi ikon pariwisata Bali. Selain pura yang indah, Bedugul juga menawarkan kebun raya Eka Karya Bali dan pemandangan hijau pegunungan yang memukau.',
+   imgs:['1604999333679-b86d54738315','1537996194471-e657df975ab4','1552553625-e7eb808a9e25','1571997799836-4fdd95c4b2c3','1527090526205-befd3e1fa299']},
+  {id:'besakih', name:'Pura Besakih', cat:'Pura', hours:'08:00–18:00', admission:'IDR 60.000', tip:'Wajib mengenakan sarung dan selendang — bisa disewa di pintu masuk.',
+   desc:'Pura Besakih adalah kompleks pura Hindu terbesar dan terpenting di Bali, sering disebut Mother Temple of Bali. Terletak di lereng Gunung Agung pada ketinggian 1.000 meter, kompleks ini terdiri dari lebih dari 80 pura. Besakih merupakan pusat keagamaan dan spiritual bagi umat Hindu Bali.',
+   imgs:['1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4','1571997799836-4fdd95c4b2c3','1504681015319-f9ba5f64faf8']},
+  {id:'jatiluwih', name:'Jatiluwih', cat:'Alam', hours:'07:00–18:00', admission:'IDR 40.000', tip:'Ideal untuk trekking pagi hari — jangan lupa sunscreen dan air minum.',
+   desc:'Jatiluwih adalah kawasan sawah terasering yang telah diakui oleh UNESCO sebagai Warisan Budaya Dunia sejak 2012. Terletak di Kabupaten Tabanan. Sawah terasering seluas 600 hektar menggunakan sistem irigasi Subak yang telah ada ribuan tahun. Pemandangan hijau dengan latar Gunung Batukaru menciptakan lanskap yang memukau.',
+   imgs:['1537996194471-e657df975ab4','1604999333679-b86d54738315','1512735980592-32cf1c20d4cf','1527090526205-befd3e1fa299','1552553625-e7eb808a9e25']},
+  {id:'lovina', name:'Lovina', cat:'Pantai', hours:'05:00–18:00', admission:'Gratis (dolphin tour IDR 200.000)', tip:'Naik kapal pagi-pagi sekali (06:00) untuk melihat lumba-lumba.',
+   desc:'Lovina adalah kawasan wisata pantai di Bali utara, Kabupaten Buleleng. Berbeda dengan pantai-pantai di Bali selatan, Lovina menawarkan suasana yang lebih tenang dengan pasir hitam vulkanik. Daya tarik utama adalah dolphin watching di pagi hari dengan ratusan lumba-lumba liar.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'uluwatu', name:'Uluwatu', cat:'Pura', hours:'09:00–18:00', admission:'IDR 50.000', tip:'Hati-hati dengan kera — simpan kacamata dan barang berharga dalam tas.',
+   desc:'Pura Uluwatu adalah salah satu dari enam pura penyangga jagat di Bali yang terletak di ujung semenanjung Bukit pada tebing setinggi 70 meter di atas Samudra Hindia. Kawasan ini terkenal dengan pertunjukan tari Kecak setiap sore hari dengan latar sunset spektakuler.',
+   imgs:['1558618666-fcd25c85cd64','1506905925346-21bda4d32df4','1555400038-63f5ba517a47','1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4']},
+  {id:'taman-ujung', name:'Taman Ujung', cat:'Budaya', hours:'08:00–18:00', admission:'IDR 50.000', tip:'Kunjungi pagi hari untuk cahaya terbaik dan suasana yang lebih sepi.',
+   desc:'Taman Ujung atau Taman Soekasada adalah bekas istana air Raja Karangasem yang dibangun pada 1919. Kompleks terdiri dari tiga kolam utama dihubungkan jembatan batu dengan pavilion elegan. Dari taman ini, pengunjung bisa menikmati pemandangan Gunung Agung dan Selat Lombok.',
+   imgs:['1565804573967-c4c6bfe90a3d','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1571997799836-4fdd95c4b2c3','1512735980592-32cf1c20d4cf']},
+  {id:'candidasa', name:'Candidasa', cat:'Pantai', hours:'08:00–17:00', admission:'Gratis', tip:'Ideal untuk snorkeling — sewa peralatan di pantai sekitar IDR 50.000.',
+   desc:'Candidasa adalah kota kecil yang tenang di pantai timur Bali, Kabupaten Karangasem. Perairan di sini relatif tenang dan jernih, cocok untuk snorkeling dan menyelam. Di sekitar Candidasa terdapat beberapa desa Bali kuno termasuk Desa Tenganan yang terkenal dengan kain tenun gringsing.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'tirta-gangga', name:'Tirta Gangga', cat:'Budaya', hours:'08:00–18:00', admission:'IDR 50.000', tip:'Coba rendaman kolam air suci — suhu airnya menyegarkan di cuaca panas.',
+   desc:'Tirta Gangga adalah kompleks taman air bekas istana Raja Karangasem yang dibangun 1948. Kompleks menampilkan kolam-kolam bertingkat dengan air jernih dari mata air gunung, dihiasi patung-patung batu dan teratai. Pengunjung bisa berenang di kolam dekoratif sambil menikmati pemandangan sawah terasering.',
+   imgs:['1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1527090526205-befd3e1fa299','1512735980592-32cf1c20d4cf']},
+  {id:'tulamben', name:'Tulamben', cat:'Alam', hours:'06:00–18:00', admission:'Gratis (sewa alat terpisah)', tip:'USS Liberty Shipwreck bisa diselami mulai kedalaman 5 meter — cocok untuk pemula.',
+   desc:'Tulamben adalah desa nelayan di pantai timur laut Bali yang menjadi salah satu destinasi menyelam terbaik di Asia Tenggara. Daya tarik utamanya adalah bangkai kapal USS Liberty dari Perang Dunia II yang kini rumah bagi ratusan spesies ikan dan koral. Bangkai kapal bisa dicapai langsung dari pantai.',
+   imgs:['1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1506905925346-21bda4d32df4','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'amed', name:'Amed', cat:'Pantai', hours:'06:00–18:00', admission:'Gratis', tip:'Sunrise dari Amed sangat indah — bangun subuh sangat dianjurkan.',
+   desc:'Amed adalah rangkaian desa nelayan di pantai timur laut Bali yang berkembang menjadi destinasi populer untuk snorkeling, diving, dan yoga retreat. Perairan di sini sangat jernih dengan visibilitas tinggi. Pemandangan Gunung Agung dari pantai berpasir hitam menciptakan latar yang dramatis.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1571997799836-4fdd95c4b2c3','1604999333679-b86d54738315']},
+  {id:'labuan-amuk', name:'Labuan Amuk', cat:'Pantai', hours:'06:00–18:00', admission:'Gratis', tip:'Titik keberangkatan menuju Gili Meno, Gili Air, dan Gili Trawangan.',
+   desc:'Labuan Amuk adalah pelabuhan kecil di Teluk Amuk, Kabupaten Karangasem, yang menjadi pintu gerbang menuju Pulau Lombok dan Kepulauan Gili. Kawasan ini memiliki pantai berpasir putih dengan air laut biru jernih. Kapal cepat berangkat setiap hari menuju Gili Trawangan, Meno, dan Air dalam 1,5 jam.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'tenganan', name:'Tenganan', cat:'Budaya', hours:'08:00–18:00', admission:'Sukarela', tip:'Kain tenun gringsing adalah souvenir khas — beli langsung dari pengrajin.',
+   desc:'Tenganan Pengringsingan adalah salah satu desa Bali Aga paling terkenal di Kabupaten Karangasem. Desa ini merupakan satu-satunya tempat di dunia yang memproduksi kain tenun gringsing, kain sakral dobel ikat yang proses pembuatannya bisa bertahun-tahun. Festival Magpung menampilkan pertarungan pandan sebagai ritual persembahan kepada dewa.',
+   imgs:['1512735980592-32cf1c20d4cf','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d','1570168007204-3c01578bf4a4']},
+  {id:'padangbai', name:'Padang Bai Blue Lagoon', cat:'Pantai', hours:'07:00–17:00', admission:'Gratis', tip:'Akses via jalan setapak di bukit — gunakan alas kaki yang nyaman.',
+   desc:'Blue Lagoon Padang Bai adalah teluk tersembunyi berpasir putih di dekat Pelabuhan Padang Bai, Kabupaten Karangasem. Warna air lautnya memukau — perpaduan biru toska dan hijau zamrud yang jernih. Spot ini sangat populer bagi penyelam dan snorkeler karena keanekaragaman hayati lautnya.',
+   imgs:['1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1506905925346-21bda4d32df4','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'lempuyang', name:'Pura Lempuyang', cat:'Pura', hours:'08:00–17:00', admission:'IDR 50.000', tip:'Antrian foto Gate of Heaven bisa sangat panjang — datang sebelum jam 8 pagi.',
+   desc:'Pura Lempuyang adalah kompleks pura suci di lereng Gunung Lempuyang, Kabupaten Karangasem. Terkenal secara internasional melalui foto "Gate of Heaven" — gapura kembar dengan latar Gunung Agung. Kompleks terdiri dari tujuh pura di berbagai ketinggian, dengan 1.700 anak tangga menuju pura tertinggi.',
+   imgs:['1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4','1571997799836-4fdd95c4b2c3','1604999333679-b86d54738315']},
+  {id:'pantai-virgin', name:'Pantai Virgin', cat:'Pantai', hours:'07:00–18:00', admission:'IDR 20.000', tip:'Pantai ini masih sangat sepi — ideal untuk yang mencari ketenangan.',
+   desc:'Pantai Virgin, dikenal juga sebagai Pantai Perasi, adalah pantai tersembunyi di Kabupaten Karangasem yang belum banyak diketahui. Pasir putih yang bersih dan air laut yang jernih menjadikannya sempurna untuk bersantai jauh dari keramaian.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'bias-tugel', name:'Pantai Bias Tugel', cat:'Pantai', hours:'07:00–18:00', admission:'IDR 20.000', tip:'Akses via jalan sempit — lebih baik menggunakan motor atau berjalan kaki.',
+   desc:'Pantai Bias Tugel adalah pantai tersembunyi dekat Pelabuhan Padang Bai, Kabupaten Karangasem. Pantai ini memiliki pasir putih yang lembut dengan air laut berwarna biru toska yang jernih, dikelilingi tebing-tebing hijau yang dramatis.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'goa-lawah', name:'Pura Goa Lawah', cat:'Pura', hours:'08:00–18:00', admission:'IDR 30.000', tip:'Ribuan kelelawar di dalam goa — jangan terkejut dengan suaranya yang keras.',
+   desc:'Pura Goa Lawah adalah pura suci unik yang dibangun di depan sebuah gua alami dihuni ribuan kelelawar. Terletak di pesisir tenggara Bali, pura ini merupakan salah satu dari enam pura penyangga jagat di Bali. Ribuan kelelawar yang menghuni gua ini dianggap suci oleh umat Hindu setempat.',
+   imgs:['1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4','1570168007204-3c01578bf4a4','1512735980592-32cf1c20d4cf']},
+  {id:'kerta-gosa', name:'Kerta Gosa', cat:'Budaya', hours:'08:00–17:00', admission:'IDR 40.000', tip:'Perhatikan detail lukisan langit-langit — ceritanya sangat kaya makna filosofis.',
+   desc:'Kerta Gosa adalah bekas pengadilan kerajaan Klungkung, terletak di kota Semarapura. Kompleks ini terkenal dengan lukisan gaya wayang Kamasan yang menghiasi langit-langitnya, menggambarkan kisah Hindu dan hukuman neraka. Bale Kambang berdiri di tengah kolam teratai yang indah.',
+   imgs:['1512735980592-32cf1c20d4cf','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d','1571997799836-4fdd95c4b2c3']},
+  {id:'desa-kemasan', name:'Desa Kamasan', cat:'Budaya', hours:'08:00–17:00', admission:'Gratis', tip:'Kunjungi studio lukisan untuk melihat langsung proses pembuatan gaya Kamasan.',
+   desc:'Desa Kamasan adalah pusat seni lukis tradisional Bali di Kecamatan Klungkung. Desa ini merupakan tempat lahir dan berkembangnya seni lukis gaya Kamasan, salah satu gaya lukisan Bali tertua yang terinspirasi dari wayang kulit dan naskah lontar kuno.',
+   imgs:['1512735980592-32cf1c20d4cf','1558618666-fcd25c85cd64','1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d']},
+  {id:'sukawati', name:'Pasar Sukawati', cat:'Budaya', hours:'08:00–18:00', admission:'Gratis', tip:'Tawar harga hingga 50% dari harga pertama — sudah biasa di sini.',
+   desc:'Pasar Seni Sukawati adalah pasar tradisional terkenal sebagai pusat kerajinan tangan dan seni Bali dengan harga sangat terjangkau. Terletak di Kecamatan Sukawati, Kabupaten Gianyar. Berbagai produk tersedia mulai dari pakaian batik, sarung, lukisan, patung, dan aksesori.',
+   imgs:['1512735980592-32cf1c20d4cf','1570168007204-3c01578bf4a4','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d']},
+  {id:'ubud-palace', name:'Ubud Palace', cat:'Budaya', hours:'09:00–18:00', admission:'IDR 50.000 (pertunjukan)', tip:'Tonton pertunjukan tari Barong setiap pagi dan tari Legong setiap malam.',
+   desc:'Puri Saren Agung atau Ubud Royal Palace adalah istana kerajaan yang masih ditinggali keluarga kerajaan Ubud, terletak di pusat Kota Ubud. Dibangun pada abad ke-19, kompleks ini merupakan contoh brilian arsitektur Bali. Setiap malam, halaman istana menjadi panggung pertunjukan tari tradisional Bali.',
+   imgs:['1512735980592-32cf1c20d4cf','1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4','1570168007204-3c01578bf4a4']},
+  {id:'ubud-market', name:'Ubud Market', cat:'Budaya', hours:'06:00–18:00', admission:'Gratis', tip:'Kunjungi pagi hari (sebelum jam 9) untuk suasana pasar tradisional yang autentik.',
+   desc:'Pasar Ubud adalah pasar tradisional yang terletak tepat di depan Ubud Royal Palace. Pasar ini beroperasi dalam dua sesi — pasar pagi menjual produk segar dan pasar seni menjual kerajinan tangan dan suvenir.',
+   imgs:['1512735980592-32cf1c20d4cf','1570168007204-3c01578bf4a4','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d']},
+  {id:'monkey-forest', name:'Monkey Forest Ubud', cat:'Alam', hours:'09:00–18:00', admission:'IDR 80.000', tip:'Jangan bawa makanan di tangan — kera di sini sangat aktif.',
+   desc:'Sacred Monkey Forest Sanctuary Ubud adalah hutan alam seluas 12,5 hektar yang menjadi rumah bagi lebih dari 700 ekor kera ekor panjang Bali. Hutan ini juga merupakan tempat suci dengan tiga pura yang masih aktif digunakan.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'tirta-empul', name:'Pura Tirta Empul', cat:'Pura', hours:'08:00–17:00', admission:'IDR 50.000', tip:'Ikuti ritual melukat (mandi suci) — kenakan sarung, bisa dipinjam di tempat.',
+   desc:'Pura Tirta Empul terkenal dengan kolam pemandian sucinya yang bersumber dari mata air alami yang dipercaya memiliki kekuatan penyembuhan. Terletak di Desa Manukaya, Kabupaten Gianyar, pura ini dibangun sekitar abad ke-10 Masehi.',
+   imgs:['1565804573967-c4c6bfe90a3d','1558618666-fcd25c85cd64','1527090526205-befd3e1fa299','1537996194471-e657df975ab4','1512735980592-32cf1c20d4cf']},
+  {id:'goa-gajah', name:'Goa Gajah', cat:'Pura', hours:'08:00–17:00', admission:'IDR 50.000', tip:'Masuk ke dalam goa untuk merasakan suasana meditasi yang unik.',
+   desc:'Goa Gajah atau Elephant Cave adalah situs arkeologi dari abad ke-9 Masehi di Desa Bedulu, Kabupaten Gianyar. Pintu masuk goa berupa ukiran wajah raksasa (kala) yang menakjubkan merupakan salah satu contoh seni pahat Bali-Hindu terbaik.',
+   imgs:['1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4','1570168007204-3c01578bf4a4','1512735980592-32cf1c20d4cf']},
+  {id:'gunung-kawi', name:'Pura Gunung Kawi', cat:'Pura', hours:'08:00–17:00', admission:'IDR 50.000', tip:'Siapkan fisik — ada sekitar 315 anak tangga yang harus diturun dan dinaiki.',
+   desc:'Pura Gunung Kawi adalah kompleks candi tebing yang dipahat dari dinding batu cadas di tepi Sungai Pakerisan, Tampaksiring, Kabupaten Gianyar. Dibangun pada abad ke-11, kompleks terdiri dari 10 candi setinggi 7 meter.',
+   imgs:['1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d','1512735980592-32cf1c20d4cf','1571997799836-4fdd95c4b2c3']},
+  {id:'tegalalang', name:'Tegalalang Rice Terrace', cat:'Alam', hours:'07:00–18:00', admission:'IDR 15.000', tip:'Jam 07:00-09:00 adalah waktu terbaik — cahaya keemasan dan minim pengunjung.',
+   desc:'Tegalalang Rice Terrace adalah kawasan sawah terasering ikon pariwisata Bali, terletak 9 km utara kota Ubud. Sistem irigasi tradisional Subak yang digunakan di sini telah diakui UNESCO. Sawah terasering dengan pepohonan palem menjulang menciptakan lanskap yang sangat fotogenik.',
+   imgs:['1537996194471-e657df975ab4','1512735980592-32cf1c20d4cf','1604999333679-b86d54738315','1527090526205-befd3e1fa299','1552553625-e7eb808a9e25']},
+  {id:'taman-nusa', name:'Taman Nusa Bali', cat:'Budaya', hours:'09:00–17:00', admission:'IDR 100.000', tip:'Sewa guide lokal untuk memahami sejarah dan makna setiap rumah adat.',
+   desc:'Taman Nusa Bali adalah taman budaya mini Indonesia yang menampilkan replika rumah adat dari seluruh 34 provinsi, terletak di Desa Sidan, Kabupaten Gianyar. Taman seluas 8,5 hektar ini jadi jendela keanekaragaman budaya Indonesia.',
+   imgs:['1512735980592-32cf1c20d4cf','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1570168007204-3c01578bf4a4']},
+  {id:'bali-zoo', name:'Bali Zoo', cat:'Hiburan', hours:'09:00–17:00', admission:'IDR 260.000 dewasa', tip:'Program interaksi langsung dengan satwa tersedia — booking lebih awal dianjurkan.',
+   desc:'Bali Zoo adalah kebun binatang di Desa Singapadu, Kabupaten Gianyar, yang menjadi rumah bagi lebih dari 500 spesies satwa dari seluruh dunia. Bali Zoo menggabungkan konsep hiburan dengan edukasi dan konservasi.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'bali-safari', name:'Bali Safari Marine Park', cat:'Hiburan', hours:'09:00–17:00', admission:'IDR 510.000 dewasa', tip:'Naik safari bus untuk melihat satwa liar langsung di habitatnya.',
+   desc:'Bali Safari and Marine Park adalah taman safari terbesar di Bali yang menggabungkan pengalaman safari Afrika dengan waterpark dan pertunjukan seni budaya Bali. Program safari bus membawa pengunjung melewati padang savana buatan.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'tegenungan', name:'Tegenungan Waterfall', cat:'Alam', hours:'07:00–18:00', admission:'IDR 20.000', tip:'Bawa pakaian ganti — anda pasti basah meski hanya berdiri di tepi kolam.',
+   desc:'Air Terjun Tegenungan adalah salah satu air terjun paling mudah diakses di Bali, terletak di Desa Kemenuh, Kabupaten Gianyar. Dengan ketinggian sekitar 15 meter, air terjun ini mengalir deras ke kolam alami berwarna hijau toska.',
+   imgs:['1552553625-e7eb808a9e25','1537996194471-e657df975ab4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'gwk', name:'GWK Cultural Park', cat:'Budaya', hours:'09:00–22:00', admission:'IDR 125.000 dewasa', tip:'Kunjungi sore hari untuk pertunjukan tari Bali dengan latar belakang sunset.',
+   desc:'Garuda Wisnu Kencana (GWK) Cultural Park menampilkan patung Dewa Wisnu menunggangi Garuda setinggi 121 meter — salah satu patung tertinggi di dunia. Terletak di Bukit Ungasan, Kabupaten Badung.',
+   imgs:['1609137144813-46b26e35b8fd','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d','1506905925346-21bda4d32df4']},
+  {id:'taman-ayun', name:'Pura Taman Ayun', cat:'Pura', hours:'08:00–18:00', admission:'IDR 20.000', tip:'Pura terapung di tengah kolam teratai — waktu terbaik adalah pagi hari.',
+   desc:'Pura Taman Ayun adalah pura kerajaan dari Kerajaan Mengwi yang dibangun pada tahun 1634. Pura ini memiliki menara-menara meru bertingkat yang berdiri megah di atas pulau kecil dikelilingi kolam teratai yang luas. Taman Ayun merupakan salah satu dari empat pura warisan budaya UNESCO di Bali.',
+   imgs:['1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d','1512735980592-32cf1c20d4cf','1527090526205-befd3e1fa299']},
+  {id:'kintamani', name:'Kintamani', cat:'Alam', hours:'07:00–18:00', admission:'Gratis (viewpoint IDR 30.000)', tip:'Makan siang di restoran yang menghadap Gunung Batur adalah pengalaman tak terlupakan.',
+   desc:'Kintamani adalah kawasan wisata di Kabupaten Bangli yang terkenal dengan pemandangan kaldera Gunung Batur dan Danau Batur. Terletak pada ketinggian 1.500 meter. Gunung Batur yang masih aktif menawarkan pendakian populer untuk menyaksikan matahari terbit.',
+   imgs:['1571997799836-4fdd95c4b2c3','1537996194471-e657df975ab4','1552553625-e7eb808a9e25','1527090526205-befd3e1fa299','1604999333679-b86d54738315']},
+  {id:'toya-devasya', name:'Toya Devasya', cat:'Hiburan', hours:'08:00–17:00', admission:'IDR 250.000', tip:'Datang weekday untuk suasana yang lebih sepi dan nyaman.',
+   desc:'Toya Devasya adalah resort dan taman rekreasi air panas di tepi Danau Batur, Kintamani. Taman ini memanfaatkan air panas vulkanik alami dari Gunung Batur. Pemandangan dari kolam yang langsung menghadap Danau Batur dan Gunung Batur menciptakan suasana yang luar biasa indah.',
+   imgs:['1527090526205-befd3e1fa299','1571997799836-4fdd95c4b2c3','1537996194471-e657df975ab4','1552553625-e7eb808a9e25','1604999333679-b86d54738315']},
+  {id:'penglipuran', name:'Desa Penglipuran', cat:'Budaya', hours:'08:00–18:00', admission:'IDR 25.000', tip:'Desa ini melarang kendaraan bermotor — nikmati ketenangan dengan berjalan kaki.',
+   desc:'Desa Penglipuran adalah salah satu desa adat Bali paling terawat dan diakui sebagai salah satu desa terbersih di dunia. Tata ruang tradisional sangat teratur dengan jalan utama yang lurus dan rumah adat bertembok putih berjejer rapi.',
+   imgs:['1512735980592-32cf1c20d4cf','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1570168007204-3c01578bf4a4']},
+  {id:'sanur', name:'Pantai Sanur', cat:'Pantai', hours:'24 jam', admission:'Gratis', tip:'Sanur adalah pantai sunrise di Bali — datang subuh untuk tampilan terbaik.',
+   desc:'Pantai Sanur adalah kawasan pantai di Denpasar Selatan yang terkenal sebagai pantai keluarga. Menghadap timur, Sanur menjadi satu-satunya pantai populer di Bali yang menawarkan pemandangan matahari terbit yang spektakuler. Dari Sanur, perahu cepat berangkat menuju Nusa Penida setiap pagi.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'kuta', name:'Pantai Kuta', cat:'Pantai', hours:'24 jam', admission:'Gratis', tip:'Hindari berenang saat bendera merah — arus di Kuta bisa sangat kuat.',
+   desc:'Pantai Kuta adalah pantai paling terkenal di Bali yang terletak di Kecamatan Kuta, Kabupaten Badung. Pantai dengan pasir putih halus ini terkenal dengan ombaknya yang ideal untuk surfing bagi pemula serta pemandangan sunsetnya yang dramatis.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1571997799836-4fdd95c4b2c3']},
+  {id:'jimbaran', name:'Pantai Jimbaran', cat:'Pantai', hours:'24 jam', admission:'Gratis', tip:'Makan malam seafood di pinggir pantai saat sunset — wajib dicoba.',
+   desc:'Pantai Jimbaran adalah teluk setengah lingkaran yang terkenal dengan restoran-restoran seafood langsung di tepi pantai. Terletak di Kecamatan Kuta Selatan, pantai ini memiliki pasir putih dan air laut yang tenang. Ikan segar, udang, cumi, dan lobster dengan bumbu Bali khas adalah hidangan yang wajib dicoba.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'nusa-dua', name:'Pantai Nusa Dua', cat:'Pantai', hours:'24 jam', admission:'Gratis', tip:'Kawasan resort mewah — pastikan menggunakan beach access jika tidak menginap.',
+   desc:'Nusa Dua adalah kawasan resort mewah di Semenanjung Bukit yang dikembangkan untuk pariwisata premium. Pantai-pantai di Nusa Dua memiliki pasir putih bersih dan air laut biru jernih yang tenang. Berbagai aktivitas air tersedia termasuk snorkeling, diving, parasailing, dan jet ski.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'dreamland', name:'Pantai Dreamland', cat:'Pantai', hours:'07:00–18:00', admission:'IDR 20.000', tip:'Ombak di Dreamland sangat kuat — hanya untuk perenang yang berpengalaman.',
+   desc:'Pantai Dreamland adalah pantai dengan pasir putih yang dramatis tersembunyi di balik tebing-tebing kapur putih di Semenanjung Bukit. Ombak besar dari Samudra Hindia menjadikan Dreamland spot surfing yang sangat populer.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1571997799836-4fdd95c4b2c3']},
+  {id:'pandawa', name:'Pantai Pandawa', cat:'Pantai', hours:'07:00–18:00', admission:'IDR 15.000', tip:'Jalan masuk melalui tebing kapur yang dipahat — sangat fotogenik.',
+   desc:'Pantai Pandawa adalah pantai berpasir putih tersembunyi di balik tebing-tebing kapur di Semenanjung Bukit. Untuk mencapai pantai ini, pengunjung melewati jalan yang dipahat melalui dinding tebing kapur setinggi 50 meter. Di dinding tebing terdapat pahatan patung lima Pandawa dari epik Mahabharata.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'melasti', name:'Pantai Melasti', cat:'Pantai', hours:'07:00–18:00', admission:'IDR 10.000', tip:'Sunset di tebing Melasti sangat memukau — jangan lewatkan.',
+   desc:'Pantai Melasti adalah pantai tersembunyi di ujung selatan Semenanjung Bukit yang baru dibuka untuk umum pada 2016. Pantai dengan pasir putih bersih dan air laut yang sangat jernih ini dikelilingi oleh tebing-tebing kapur putih yang dramatis.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1571997799836-4fdd95c4b2c3']},
+  {id:'nungnung', name:'Air Terjun Nungnung', cat:'Alam', hours:'07:00–17:00', admission:'IDR 20.000', tip:'Hati-hati tangga yang licin — bawa tongkat atau gunakan jasa pemandu lokal.',
+   desc:'Air Terjun Nungnung adalah salah satu air terjun tertinggi di Bali dengan ketinggian sekitar 50 meter, terletak di Desa Pelaga, Kecamatan Petang, Kabupaten Badung. Pengunjung harus menuruni sekitar 500 anak tangga yang curam melalui hutan tropis.',
+   imgs:['1552553625-e7eb808a9e25','1537996194471-e657df975ab4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1571997799836-4fdd95c4b2c3']},
+  {id:'sekumpul', name:'Air Terjun Sekumpul', cat:'Alam', hours:'07:00–17:00', admission:'IDR 30.000', tip:'Trekking sekitar 45 menit — paling indah saat musim hujan (November-April).',
+   desc:'Air Terjun Sekumpul sering dijuluki sebagai air terjun terindah di Bali. Terletak di Desa Sekumpul, Kabupaten Buleleng, air terjun ini sebenarnya adalah sekelompok tujuh air terjun yang berdekatan mengalir dari ketinggian 80 meter.',
+   imgs:['1552553625-e7eb808a9e25','1537996194471-e657df975ab4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'danau-tamblingan', name:'Danau Tamblingan', cat:'Alam', hours:'07:00–17:00', admission:'IDR 20.000 + sewa perahu', tip:'Kayak melalui kabut pagi adalah pengalaman mistis yang tak terlupakan.',
+   desc:'Danau Tamblingan adalah danau suci di Kabupaten Buleleng, tersembunyi di balik hutan hujan tropis yang lebat. Hutan yang mengelilingi danau merupakan kawasan konservasi. Di tepi danau terdapat beberapa pura kecil yang masih aktif, menciptakan nuansa spiritual yang kuat.',
+   imgs:['1527090526205-befd3e1fa299','1537996194471-e657df975ab4','1571997799836-4fdd95c4b2c3','1552553625-e7eb808a9e25','1604999333679-b86d54738315']},
+  {id:'kelingking', name:'Pantai Kelingking', cat:'Pantai', hours:'07:00–17:00', admission:'IDR 30.000 (ferry ke NP)', tip:'Turun ke pantai memerlukan fisik yang baik — trek sangat terjal dan berlumpur.',
+   desc:'Pantai Kelingking di Nusa Penida adalah salah satu tempat wisata paling viral di dunia berkat pemandangannya yang luar biasa dari atas tebing. Berbentuk seperti jari kelingking raksasa, tanjung kapur putih ini menjulang ke Samudra Hindia.',
+   imgs:['1555400038-63f5ba517a47','1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'diamond-beach', name:'Diamond Beach Nusa Penida', cat:'Pantai', hours:'07:00–17:00', admission:'IDR 30.000', tip:'Tangga besi menuju pantai bisa sangat panas di siang hari — datang pagi.',
+   desc:'Pantai Diamond adalah pantai tersembunyi di Nusa Penida yang mendapatkan namanya dari bebatuan karang yang berkilau seperti berlian. Pantai ini memiliki pasir putih halus dan air laut berwarna biru turquoise yang sangat jernih.',
+   imgs:['1555400038-63f5ba517a47','1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'angel-billabong', name:'Angel Billabong Nusa Penida', cat:'Alam', hours:'07:00–17:00', admission:'IDR 30.000', tip:'Hanya bisa masuk saat air laut surut — cek jadwal pasang surut sebelum berkunjung.',
+   desc:'Angel Billabong adalah kolam alami yang terbentuk di atas tebing kapur di Nusa Penida. Saat air laut surut, kolam ini terisi air laut yang jernih membentuk kolam renang alami yang menakjubkan dengan warna air hijau toska.',
+   imgs:['1555400038-63f5ba517a47','1527090526205-befd3e1fa299','1506905925346-21bda4d32df4','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'broken-beach', name:'Broken Beach Nusa Penida', cat:'Alam', hours:'07:00–17:00', admission:'IDR 30.000', tip:'Satu paket kunjungan dengan Angel Billabong yang berdekatan.',
+   desc:'Broken Beach atau Pasih Uug adalah formasi geologis yang luar biasa unik di Nusa Penida — sebuah lengkungan alami batu kapur setinggi 50 meter yang membentuk jembatan di atas perairan Samudra Hindia.',
+   imgs:['1555400038-63f5ba517a47','1527090526205-befd3e1fa299','1506905925346-21bda4d32df4','1558618666-fcd25c85cd64','1571997799836-4fdd95c4b2c3']},
+  {id:'padang-padang', name:'Pantai Padang-Padang', cat:'Pantai', hours:'07:00–18:00', admission:'IDR 20.000', tip:'Akses melalui celah batu — lokasi syuting film Eat Pray Love.',
+   desc:'Pantai Padang-Padang adalah pantai kecil yang tersembunyi di balik celah batu kapur di Semenanjung Bukit. Terkenal setelah menjadi lokasi syuting film Eat Pray Love. Ombaknya yang konsisten menjadikannya salah satu spot surfing favorit di Bali.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'balangan', name:'Pantai Balangan', cat:'Pantai', hours:'07:00–18:00', admission:'Gratis', tip:'Sewa sunbed di warung pantai dan nikmati ombak yang sempurna.',
+   desc:'Pantai Balangan adalah pantai dengan pasir putih dan ombak yang sempurna untuk surfing, terletak di bawah tebing-tebing kapur di Semenanjung Bukit. Pemandangan dari warung-warung di atas tebing sangat memukau.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1571997799836-4fdd95c4b2c3']},
+  {id:'bingin', name:'Pantai Bingin', cat:'Pantai', hours:'07:00–18:00', admission:'Gratis', tip:'Turun melalui anak tangga curam — perlu fisik yang cukup baik.',
+   desc:'Pantai Bingin adalah pantai tersembunyi di Semenanjung Bukit yang terkenal di kalangan peselancar profesional karena ombaknya yang kuat dan barrel yang sempurna. Suasananya yang bohemian menjadikan Bingin surga bagi wisatawan yang mencari pengalaman autentik.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'banyumala', name:'Air Terjun Banyumala', cat:'Alam', hours:'08:00–17:00', admission:'IDR 20.000', tip:'Kolam alami di kaki air terjun cocok untuk berenang.',
+   desc:'Air Terjun Banyumala adalah sepasang air terjun yang tersembunyi di Desa Wanagiri, Buleleng, Bali utara. Air terjun kembar ini jatuh ke kolam alami yang jernih dan sangat menyegarkan. Relatif belum banyak diketahui wisatawan, menjadikannya destinasi yang tenang dan alami.',
+   imgs:['1552553625-e7eb808a9e25','1537996194471-e657df975ab4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'gitgit', name:'Air Terjun Git Git', cat:'Alam', hours:'07:00–17:00', admission:'IDR 20.000', tip:'Bawa baju ganti untuk berenang di bawah air terjun yang menyegarkan.',
+   desc:'Air Terjun Git Git adalah air terjun di Desa Gitgit, Kabupaten Buleleng. Dengan ketinggian sekitar 35 meter, air terjun ini mengalir deras di antara pepohonan tropis yang rimbun menciptakan kolam alami yang indah.',
+   imgs:['1552553625-e7eb808a9e25','1537996194471-e657df975ab4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1571997799836-4fdd95c4b2c3']},
+  {id:'bali-bird-park', name:'Bali Bird Park', cat:'Hiburan', hours:'09:00–17:30', admission:'IDR 200.000 dewasa', tip:'Pertunjukan langsung burung eksotis di luar kandang setiap jam 11 dan 15.',
+   desc:'Bali Bird Park adalah taman burung di Batubulan, Gianyar, yang menampung lebih dari 1.000 ekor burung dari 250 spesies termasuk burung-burung langka seperti Jalak Bali. Satu-satunya tempat terbaik untuk melihat Jalak Bali yang terancam punah.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'tanjung-benoa', name:'Tanjung Benoa', cat:'Pantai', hours:'08:00–17:00', admission:'Gratis (wahana terpisah)', tip:'Pusat watersport terlengkap di Bali — pesan paket untuk harga lebih hemat.',
+   desc:'Tanjung Benoa adalah pusat olahraga air terlengkap di Bali yang terletak di ujung selatan Semenanjung Nusa Dua. Kawasan ini menawarkan berbagai wahana air seperti parasailing, banana boat, glass bottom boat, snorkeling, jet ski, dan diving.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'kedonganan', name:'Pantai Kedonganan', cat:'Pantai', hours:'06:00–22:00', admission:'Gratis', tip:'Datang pagi untuk menyaksikan nelayan membawa hasil tangkapan segar.',
+   desc:'Pantai Kedonganan adalah pantai nelayan di Kabupaten Badung yang terkenal dengan pasar ikan segar dan restoran-restoran seafood yang berjejer di tepi pantai. Pemandangan sunset di sini tak kalah indah dengan pantai-pantai lain di sekitarnya.',
+   imgs:['1506905925346-21bda4d32df4','1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1558618666-fcd25c85cd64','1537996194471-e657df975ab4']},
+  {id:'alas-kedaton', name:'Alas Kedaton', cat:'Alam', hours:'08:00–18:00', admission:'IDR 20.000', tip:'Kera di sini jinak tapi tetap waspada — jangan tunjukkan makanan.',
+   desc:'Alas Kedaton adalah hutan suci dengan koloni kera dan kelelawar yang terletak di Desa Kukuh, Kabupaten Tabanan. Pura yang berada di dalam hutan ini dikelilingi oleh pohon-pohon besar berusia ratusan tahun. Jauh lebih sepi dari Monkey Forest Ubud.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'sangeh', name:'Sangeh Monkey Forest', cat:'Alam', hours:'08:00–18:00', admission:'IDR 30.000', tip:'Berbeda dari Ubud — kera di sini lebih berani, waspada terhadap aksesori.',
+   desc:'Sangeh Monkey Forest adalah hutan suci di Desa Sangeh, Kabupaten Badung, yang terkenal dengan koloni kera ekor panjang. Hutan ini dipenuhi pohon pala besar yang langka. Pura Bukit Sari yang berada di tengah hutan menambah nuansa spiritual pada kawasan ini.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'wanagiri', name:'Wanagiri Hidden Hills', cat:'Alam', hours:'07:00–18:00', admission:'IDR 30.000', tip:'Sarang burung yang terkenal untuk foto Instagram — antrian pagi hari lebih sepi.',
+   desc:'Wanagiri Hidden Hills adalah kawasan wisata foto di Desa Wanagiri, Kabupaten Buleleng, dengan pemandangan Danau Buyan dan Danau Tamblingan yang memukau. Kawasan ini terkenal dengan berbagai spot foto Instagramable seperti sarang burung raksasa dan ayunan di atas jurang.',
+   imgs:['1537996194471-e657df975ab4','1527090526205-befd3e1fa299','1571997799836-4fdd95c4b2c3','1552553625-e7eb808a9e25','1604999333679-b86d54738315']},
+  {id:'blooms-garden', name:'Blooms Garden Bali', cat:'Hiburan', hours:'08:00–18:00', admission:'IDR 80.000', tip:'Pagi hari adalah waktu terbaik — bunga mekar sempurna sebelum terik siang.',
+   desc:'Blooms Garden Bali adalah taman bunga tropis yang indah terletak di Kintamani, menawarkan pemandangan Gunung Batur sebagai latar belakang yang dramatis. Taman ini menampilkan ratusan jenis bunga tropis dalam taman yang tertata rapi.',
+   imgs:['1537996194471-e657df975ab4','1552553625-e7eb808a9e25','1527090526205-befd3e1fa299','1571997799836-4fdd95c4b2c3','1604999333679-b86d54738315']},
+  {id:'museum-bali', name:'Museum Bali', cat:'Budaya', hours:'08:00–16:00', admission:'IDR 20.000', tip:'Panduan bahasa Inggris tersedia — sangat informatif tentang sejarah Bali.',
+   desc:'Museum Bali adalah museum tertua di Bali yang terletak di pusat kota Denpasar. Museum ini menyimpan koleksi lengkap artefak sejarah dan budaya Bali termasuk pakaian adat, senjata tradisional, dan karya seni yang mencakup ribuan tahun sejarah pulau ini.',
+   imgs:['1512735980592-32cf1c20d4cf','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d','1570168007204-3c01578bf4a4']},
+  {id:'bajra-sandi', name:'Museum Bajra Sandi', cat:'Budaya', hours:'08:00–17:00', admission:'IDR 15.000', tip:'Pemandangan dari puncak monumen sangat bagus — ambil tangga spiral ke atas.',
+   desc:'Monumen Bajra Sandi adalah monumen perjuangan rakyat Bali yang terletak di Lapangan Renon, Denpasar. Berbentuk seperti genta atau bajra, monumen setinggi 45 meter ini menjadi landmark kota Denpasar. Di dalamnya terdapat museum yang menceritakan sejarah panjang perjuangan rakyat Bali.',
+   imgs:['1512735980592-32cf1c20d4cf','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1571997799836-4fdd95c4b2c3']},
+  {id:'pura-saraswati', name:'Pura Saraswati', cat:'Pura', hours:'08:00–18:00', admission:'Gratis', tip:'Pertunjukan tari di taman pura sangat indah — cek jadwal di papan informasi.',
+   desc:'Pura Saraswati adalah pura indah di pusat Ubud yang dipersembahkan kepada Dewi Saraswati, dewi pengetahuan dan seni. Dibangun pada tahun 1950-an oleh seniman Bali I Gusti Nyoman Lempad, pura ini memiliki kolam teratai yang luas di depannya.',
+   imgs:['1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1537996194471-e657df975ab4','1512735980592-32cf1c20d4cf','1527090526205-befd3e1fa299']},
+  {id:'art-center', name:'Taman Budaya Art Center', cat:'Budaya', hours:'08:00–17:00', admission:'IDR 20.000', tip:'Kunjungi saat Pesta Kesenian Bali (Juni-Juli) untuk pengalaman budaya terbaik.',
+   desc:'Taman Budaya Bali atau Bali Arts Center adalah kompleks seni budaya terbesar di Bali yang terletak di Denpasar. Kompleks ini menjadi tuan rumah Pesta Kesenian Bali (PKB) yang diadakan setiap tahun selama bulan Juni-Juli, salah satu festival seni terbesar di Asia Tenggara.',
+   imgs:['1512735980592-32cf1c20d4cf','1558618666-fcd25c85cd64','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d','1570168007204-3c01578bf4a4']},
+  {id:'samsara', name:'Samsara Living Museum', cat:'Budaya', hours:'09:00–17:00', admission:'IDR 150.000', tip:'Pengalaman imersif tentang kehidupan petani Bali — tersedia paket cooking class.',
+   desc:'Samsara Living Museum adalah museum kehidupan yang menawarkan pengalaman imersif tentang budaya dan kehidupan sehari-hari masyarakat Bali agraris. Terletak di Ubud. Pengunjung bisa belajar memasak masakan Bali, membuat sesajen, melukis, dan berbagai aktivitas budaya lainnya.',
+   imgs:['1512735980592-32cf1c20d4cf','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1565804573967-c4c6bfe90a3d','1570168007204-3c01578bf4a4']},
+  {id:'raja-lima', name:'Nusa Penida Raja Lima', cat:'Pantai', hours:'07:00–17:00', admission:'IDR 30.000 + sewa snorkel', tip:'Paket snorkeling Raja Lima termasuk 5 spot terbaik — sangat worth it.',
+   desc:'Paket Snorkeling Raja Lima (Royale Five) di Nusa Penida adalah tour snorkeling ke lima titik terbaik termasuk Crystal Bay (Mola-mola), Manta Bay, dan SD Point. Keanekaragaman hayati laut yang luar biasa menjadikan Raja Lima pengalaman snorkeling tak terlupakan.',
+   imgs:['1527090526205-befd3e1fa299','1555400038-63f5ba517a47','1506905925346-21bda4d32df4','1558618666-fcd25c85cd64','1604999333679-b86d54738315']},
+  {id:'taman-bali-barat', name:'Taman Nasional Bali Barat', cat:'Alam', hours:'07:30–17:00', admission:'IDR 50.000 WNI', tip:'Satu-satunya habitat alami Jalak Bali yang terancam punah — wajib dikunjungi pencinta burung.',
+   desc:'Taman Nasional Bali Barat adalah kawasan konservasi alam seluas 190 km2 di ujung barat Pulau Bali. Taman ini merupakan satu-satunya habitat alami yang tersisa bagi Jalak Bali, burung endemik Bali yang sangat terancam punah.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1552553625-e7eb808a9e25','1527090526205-befd3e1fa299']},
+  {id:'taro-elephant', name:'Taro Elephant Safari Park', cat:'Hiburan', hours:'09:00–18:00', admission:'IDR 300.000 dewasa', tip:'Naik gajah melalui hutan tropis adalah pengalaman yang sangat berkesan untuk anak-anak.',
+   desc:'Taro Elephant Safari Park adalah sanctuary gajah Sumatera yang terletak di Desa Taro, Gianyar. Park ini merupakan rumah bagi puluhan gajah Sumatera yang diselamatkan. Pengunjung bisa berinteraksi langsung dengan gajah, memberi makan, memandikan, dan menungganginya.',
+   imgs:['1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'kemenuh-butterfly', name:'Kemenuh Butterfly Park', cat:'Hiburan', hours:'09:00–17:00', admission:'IDR 50.000', tip:'Datang pagi hari saat kupu-kupu paling aktif dan berwarna-warni.',
+   desc:'Kemenuh Butterfly Park adalah taman kupu-kupu di Desa Kemenuh, Gianyar, yang menampung ratusan spesies kupu-kupu tropis dari seluruh Indonesia. Pengunjung bisa berjalan di antara kupu-kupu yang beterbangan bebas.',
+   imgs:['1537996194471-e657df975ab4','1527090526205-befd3e1fa299','1558618666-fcd25c85cd64','1512735980592-32cf1c20d4cf','1565804573967-c4c6bfe90a3d']},
+  {id:'pasar-guwang', name:'Pasar Seni Guwang', cat:'Budaya', hours:'08:00–18:00', admission:'Gratis', tip:'Harga lebih murah dari Sukawati — sumber kerajinan ukiran kayu terbaik.',
+   desc:'Pasar Seni Guwang adalah pasar kerajinan di Desa Guwang, Sukawati, Gianyar, yang khusus terkenal dengan kerajinan ukiran kayu Bali berkualitas tinggi. Berbagai produk kerajinan tersedia termasuk patung kayu, topeng, furnitur ukiran, dan aksesori rumah tangga.',
+   imgs:['1512735980592-32cf1c20d4cf','1558618666-fcd25c85cd64','1570168007204-3c01578bf4a4','1537996194471-e657df975ab4','1565804573967-c4c6bfe90a3d']}
+];
+
+// ── State
+var activeFilter = 'all';
+var searchQuery = '';
+var WISATA_MAP = {};
+WISATA.forEach(function(p){ WISATA_MAP[p.id] = p; });
+
+function catBadgeClass(cat) {
+  var map = {Pantai:'badge-Pantai',Pura:'badge-Pura',Alam:'badge-Alam',Budaya:'badge-Budaya',Hiburan:'badge-Hiburan'};
+  return map[cat] || 'badge-Alam';
+}
+function wImg(photoId) {
+  return 'https://images.unsplash.com/photo-' + photoId + '?w=600&q=80&fit=crop';
+}
+
+function setFilter(cat, el) {
+  activeFilter = cat;
+  document.querySelectorAll('.fchip').forEach(function(c){ c.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderGrid();
+}
+
+function filterWisata() {
+  searchQuery = document.getElementById('searchInput').value.toLowerCase();
+  renderGrid();
+}
+
+function renderGrid() {
+  var grid = document.getElementById('wisataGrid');
+  var countEl = document.getElementById('placeCount');
+  var filtered = WISATA.filter(function(p) {
+    var matchCat = (activeFilter === 'all') || (p.cat === activeFilter);
+    var matchSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery) || p.cat.toLowerCase().includes(searchQuery);
+    return matchCat && matchSearch;
+  });
+  var noRes = document.getElementById('noResults');
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    grid.appendChild(noRes);
+    noRes.style.display = 'block';
+    countEl.textContent = '';
+    return;
+  }
+  noRes.style.display = 'none';
+  countEl.textContent = 'Menampilkan ' + filtered.length + ' dari ' + WISATA.length + ' destinasi';
+  grid.innerHTML = filtered.map(function(p) {
+    return '<div class="wcard" onclick="openModal(\'' + p.id + '\')">' +
+      '<div class="wcard-img">' +
+      '<img src="' + wImg(p.imgs[0]) + '" alt="' + p.name + '" loading="lazy"/>' +
+      '<div class="wcard-overlay"></div>' +
+      '<div class="wcard-see">&#x2192; See details</div>' +
+      '</div>' +
+      '<div class="wcard-body">' +
+      '<span class="wcard-badge ' + catBadgeClass(p.cat) + '">' + p.cat + '</span>' +
+      '<div class="wcard-name">' + p.name + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+// Modal
+function openModal(id) {
+  var p = WISATA_MAP[id];
+  if (!p) return;
+  document.getElementById('wisataModalBadge').textContent = p.cat;
+  document.getElementById('wisataModalBadge').className = 'wcard-badge ' + catBadgeClass(p.cat);
+  document.getElementById('wisataModalTitle').textContent = p.name;
+  document.getElementById('wisataModalMeta').innerHTML =
+    '<span>&#x1F557; ' + p.hours + '</span><span>&#x1F3AB; ' + (p.admission || '-') + '</span>';
+  document.getElementById('wisataModalDesc').textContent = p.desc;
+  document.getElementById('wisataModalTip').innerHTML = '<strong>&#x1F4A1; Tips:</strong> ' + p.tip;
+  var strip = document.getElementById('wisataImgStrip');
+  strip.innerHTML = p.imgs.map(function(pid){
+    return '<img src="' + wImg(pid) + '" alt="' + p.name + '" loading="lazy"/>';
+  }).join('');
+  var msg = encodeURIComponent('Halo Diwira Travel! Saya tertarik untuk tour ke ' + p.name + '. Bisa info lebih lanjut?');
+  document.getElementById('wisataBookBtn').href = 'https://wa.me/6282147242621?text=' + msg;
+  var ov = document.getElementById('wisataOverlay');
+  ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('wisataOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on overlay click or Escape
+document.getElementById('wisataOverlay').addEventListener('click', function(e){
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
+
+// Init
+renderGrid();
+</script>
+</body>
+</html>
