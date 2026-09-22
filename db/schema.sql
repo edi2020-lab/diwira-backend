@@ -66,13 +66,15 @@ VALUES (
 
 -- ── Tours ─────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS tours (
-  id          INT           AUTO_INCREMENT PRIMARY KEY,
-  slug        VARCHAR(100)  NOT NULL UNIQUE,
-  name        VARCHAR(200)  NOT NULL,
-  description TEXT,
-  price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  duration    VARCHAR(100),
-  category    VARCHAR(100),
+  id           INT           AUTO_INCREMENT PRIMARY KEY,
+  slug         VARCHAR(100)  NOT NULL UNIQUE,
+  name         VARCHAR(200)  NOT NULL,
+  description  TEXT,
+  price        DECIMAL(10,2) NOT NULL DEFAULT 0.00,   -- adult price
+  child_price  DECIMAL(10,2) DEFAULT NULL,             -- NULL = 50% of adult
+  infant_price DECIMAL(10,2) DEFAULT NULL,             -- NULL = free
+  duration     VARCHAR(100),
+  category     ENUM('Half Day Tour','Full Day Tour','Adventure','All Inclusive Tour','Nusa Penida') NOT NULL DEFAULT 'Full Day Tour',
   image_url   VARCHAR(500),
   is_active   TINYINT(1)    NOT NULL DEFAULT 1,
   sort_order  INT           NOT NULL DEFAULT 0,
@@ -117,3 +119,23 @@ INSERT IGNORE INTO site_settings (`key`, value) VALUES
   ('social_tripadvisor', ''),
   ('logo_url',           '/diwira-logo.jpg');
 
+-- ── Destinations (Tempat Wisata) ──────────────────────────────
+CREATE TABLE IF NOT EXISTS destinations (
+  id          INT           AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(200)  NOT NULL,
+  slug        VARCHAR(100)  NOT NULL UNIQUE,
+  description TEXT,
+  location    VARCHAR(200),
+  region      VARCHAR(100),
+  image_url   VARCHAR(500),
+  highlights  TEXT,           -- JSON array stored as text
+  is_active   TINYINT(1)    NOT NULL DEFAULT 1,
+  sort_order  INT           NOT NULL DEFAULT 0,
+  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ALTER statements for existing tours table (run if table already exists)
+-- ALTER TABLE tours ADD COLUMN child_price  DECIMAL(10,2) DEFAULT NULL AFTER price;
+-- ALTER TABLE tours ADD COLUMN infant_price DECIMAL(10,2) DEFAULT NULL AFTER child_price;
+-- ALTER TABLE tours MODIFY COLUMN category ENUM('Half Day Tour','Full Day Tour','Adventure','All Inclusive Tour','Nusa Penida') NOT NULL DEFAULT 'Full Day Tour';
