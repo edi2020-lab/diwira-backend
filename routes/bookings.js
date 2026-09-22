@@ -21,55 +21,77 @@ router.post('/',
   body('tour_id').trim().notEmpty(),
   body('tour_name').trim().notEmpty(),
   body('tour_date').isDate().withMessage('Invalid tour date'),
+  body('departure_time').optional().trim(),        // HH:MM, e.g. "08:00"
   body('adults').isInt({ min: 1 }).toInt(),
   body('children').isInt({ min: 0 }).toInt().optional().default(0),
   body('infants').isInt({ min: 0 }).toInt().optional().default(0),
-  body('adult_rate').isFloat({ min: 0 }).toFloat(),
+  body('adult_price').optional().toFloat(),
+  body('child_price').optional().toFloat(),
+  body('total_price').optional().toFloat(),
+  body('adult_rate').isFloat({ min: 0 }).toFloat().optional(),
   body('child_rate').isFloat({ min: 0 }).toFloat().optional().default(0),
-  body('adult_subtotal').isFloat({ min: 0 }).toFloat(),
+  body('adult_subtotal').isFloat({ min: 0 }).toFloat().optional(),
   body('child_subtotal').isFloat({ min: 0 }).toFloat().optional().default(0),
-  body('subtotal').isFloat({ min: 0 }).toFloat(),
-  body('total').isFloat({ min: 0 }).toFloat(),
+  body('subtotal').isFloat({ min: 0 }).toFloat().optional(),
+  body('total').isFloat({ min: 0 }).toFloat().optional(),
   body('tier_label').optional().trim(),
-  body('full_name').trim().notEmpty().withMessage('Full name is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('phone').trim().notEmpty().withMessage('Phone number is required'),
+  body('full_name').optional().trim(),
+  body('guest_name').optional().trim(),
+  body('email').optional().isEmail().normalizeEmail(),
+  body('guest_email').optional().isEmail().normalizeEmail(),
+  body('phone').optional().trim(),
+  body('guest_phone').optional().trim(),
+  body('pickup_location').optional().trim(),
+  body('nationality').optional().trim(),
   body('promo_code').optional().trim(),
   body('requests').optional().trim(),
+  body('special_requests').optional().trim(),
 
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const data = req.body;
     const booking_ref = generateRef();
 
-    // ── Auto-confirm rule: ≥ 6 hours before departure → confirmed ─
-    // Assume departure at 08:00 WITA (UTC+8)
-    const tourDateTime = new Date(`${data.tour_date}T08:00:00+08:00`);
-    const hoursUntil   = (tourDateTime - Date.now()) / 3600000;
+    // ── Normalize field names (frontend sends guest_name / guest_email / guest_phone) ─
+    const full_name    = data.full_name    || data.guest_name  || '';
+    const email        = data.email        || data.guest_email || '';
+    const phone        = data.phone        || data.guest_phone || '';
+    const total        = parseFloat(data.total        || data.total_price      || 0);
+    const subtotal     = parseFloat(data.subtotal     || data.total_price      || total);
+    const adult_rate   = parseFloat(data.adult_rate   || data.adult_price      || 0);
+    const child_rate   = parseFloat(data.child_rate   || data.child_price      || 0);
+    const adult_subtotal = parseFloat(data.adult_subtotal || (adult_rate * data.adults) || 0);
+    const child_subtotal = parseFloat(data.child_subtotal || (child_rate * (data.children || 0)) || 0);
+    const requests     = data.special_requests || data.requests || null;
+    const departure_time = data.departure_time || '08:00';
+
+    if (!full_name.trim()) return res.status(400).json({ error: 'Guest name is required.' });
+    if (!email) return res.status(400).json({ error: 'Valid email is required.' });
+    if (!phone) return res.status(400).json({ error: 'Phone number is required.' });
+
+    // ── Auto-confirm rule: ≥ 6 hours before actual departure time → confirmed ─
+    const tourDateTime  = new Date(`${data.tour_date}T${departure_time}:00+08:00`);
+    const hoursUntil    = (tourDateTime - Date.now()) / 3600000;
     const initialStatus = hoursUntil >= 6 ? 'confirmed' : 'pending';
 
     try {
       const [result] = await pool.query(
         `INSERT INTO bookings
-          (booking_ref, tour_id, tour_name, tour_date,
+          (booking_ref, tour_id, tour_name, tour_date, departure_time,
            adults, children, infants,
            adult_rate, child_rate, adult_subtotal, child_subtotal,
            subtotal, total, tier_label,
-           full_name, email, phone, promo_code, requests, status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           full_name, email, phone,
+           pickup_location, nationality, promo_code, requests, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           booking_ref,
-          data.tour_id, data.tour_name, data.tour_date,
+          data.tour_id, data.tour_name, data.tour_date, departure_time,
           data.adults, data.children ?? 0, data.infants ?? 0,
-          data.adult_rate, data.child_rate ?? 0,
-          data.adult_subtotal, data.child_subtotal ?? 0,
-          data.subtotal, data.total, data.tier_label ?? null,
-          data.full_name, data.email, data.phone,
-          data.promo_code ?? null, data.requests ?? null,
+          adult_rate, child_rate, adult_subtotal, child_subtotal,
+          subtotal, total, data.tier_label ?? null,
+          full_name, email, phone,
+          data.pickup_location ?? null, data.nationality ?? null,
+          data.promo_code ?? null, requests,
           initialStatus,
         ]
       );
@@ -80,7 +102,7 @@ router.post('/',
       const [rows] = await pool.query('SELECT * FROM bookings WHERE id = ?', [bookingId]);
       const booking = rows[0];
 
-      // Send emails (non-blocking — don't fail booking if email fails)
+      // Send emails (non-blocking)
       Promise.all([
         sendBookingNotification(booking).catch(e => console.error('Admin email failed:', e.message)),
         (initialStatus === 'confirmed'
@@ -93,14 +115,44 @@ router.post('/',
         message:     'Booking submitted successfully.',
         booking_ref,
         booking_id:  bookingId,
+        status:      initialStatus,
+        departure_time,
+        hours_until: Math.round(hoursUntil * 10) / 10,
       });
 
     } catch (err) {
       console.error('POST /bookings error:', err);
+      // If departure_time column doesn't exist yet, retry without it
+      if (err.code === 'ER_BAD_FIELD_ERROR' && err.message.includes('departure_time')) {
+        try {
+          const [result2] = await pool.query(
+            `INSERT INTO bookings
+              (booking_ref, tour_id, tour_name, tour_date,
+               adults, children, infants,
+               adult_rate, child_rate, adult_subtotal, child_subtotal,
+               subtotal, total, tier_label,
+               full_name, email, phone,
+               promo_code, requests, status)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [
+              booking_ref, data.tour_id, data.tour_name, data.tour_date,
+              data.adults, data.children ?? 0, data.infants ?? 0,
+              adult_rate, child_rate, adult_subtotal, child_subtotal,
+              subtotal, total, data.tier_label ?? null,
+              full_name, email, phone,
+              data.promo_code ?? null, requests, initialStatus,
+            ]
+          );
+          return res.status(201).json({ message: 'Booking submitted.', booking_ref, booking_id: result2.insertId, status: initialStatus });
+        } catch (err2) {
+          return res.status(500).json({ error: 'Failed to save booking.' });
+        }
+      }
       return res.status(500).json({ error: 'Failed to save booking. Please try again.' });
     }
   }
 );
+
 
 // ─────────────────────────────────────────────────────────────
 // GET /api/bookings  — list all bookings (admin only)
