@@ -29,6 +29,13 @@ function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+// Parse JSON safely — returns array or empty array
+function safeParse(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try { return JSON.parse(val); } catch { return []; }
+}
+
 // ── Helper: get pricing tiers for a tour ─────────────────────
 async function getTiers(tourId) {
   const [rows] = await pool.query(
@@ -87,6 +94,8 @@ router.get('/:id', async (req, res) => {
     const [rows] = await pool.query(`SELECT * FROM tours WHERE ${col} = ?`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Tour not found.' });
     const tour = rows[0];
+    tour.includes = safeParse(tour.includes);
+    tour.excludes = safeParse(tour.excludes);
     tour.pricing_tiers = await getTiers(tour.id);
     // Compute from_price from tiers (or fall back to price column)
     if (tour.pricing_tiers.length > 0) {
@@ -113,14 +122,23 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
   const cat = CATEGORIES.includes(category) ? category : 'Full Day Tour';
   const image_url = req.file ? `/uploads/tours/${req.file.filename}` : null;
 
+  // Parse includes/excludes — accept JSON array or newline-separated string
+  let includes_json = null, excludes_json = null;
+  try {
+    const inc = req.body.includes_items;
+    const exc = req.body.excludes_items;
+    if (inc) includes_json = JSON.stringify(Array.isArray(inc) ? inc : inc.split('\n').map(s=>s.trim()).filter(Boolean));
+    if (exc) excludes_json = JSON.stringify(Array.isArray(exc) ? exc : exc.split('\n').map(s=>s.trim()).filter(Boolean));
+  } catch {}
+
   try {
     const [result] = await pool.query(
-      `INSERT INTO tours (slug, name, description, price, child_price, infant_price, duration, category, image_url, is_active)
-       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO tours (slug, name, description, price, child_price, infant_price, duration, category, image_url, is_active, includes, excludes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
       [slug, name, description||'', parseFloat(price)||0,
        child_price ? parseFloat(child_price) : null,
        infant_price ? parseFloat(infant_price) : null,
-       duration||'', cat, image_url, is_active==0?0:1]
+       duration||'', cat, image_url, is_active==0?0:1, includes_json, excludes_json]
     );
 
     // Handle pricing tiers if sent as JSON
@@ -133,6 +151,8 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 
     const [rows] = await pool.query('SELECT * FROM tours WHERE id = ?', [result.insertId]);
     const tour = rows[0];
+    tour.includes = safeParse(tour.includes);
+    tour.excludes = safeParse(tour.excludes);
     tour.pricing_tiers = await getTiers(tour.id);
     return res.status(201).json(tour);
   } catch (err) {
@@ -140,6 +160,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     return res.status(500).json({ error: 'Failed to create tour.' });
   }
 });
+
 
 // ── PUT /api/tours/:id — update ───────────────────────────────
 router.put('/:id', auth, upload.single('image'), async (req, res) => {
@@ -156,14 +177,29 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
       image_url = `/uploads/tours/${req.file.filename}`;
     }
 
+    // Parse includes/excludes
+    let includes_json = existing[0].includes ?? null;
+    let excludes_json = existing[0].excludes ?? null;
+    try {
+      const inc = req.body.includes_items;
+      const exc = req.body.excludes_items;
+      if (inc !== undefined) includes_json = inc
+        ? JSON.stringify(Array.isArray(inc) ? inc : inc.split('\n').map(s=>s.trim()).filter(Boolean))
+        : null;
+      if (exc !== undefined) excludes_json = exc
+        ? JSON.stringify(Array.isArray(exc) ? exc : exc.split('\n').map(s=>s.trim()).filter(Boolean))
+        : null;
+    } catch {}
+
     const cat = CATEGORIES.includes(category) ? category : existing[0].category;
     await pool.query(
       `UPDATE tours SET name=?, description=?, price=?, child_price=?, infant_price=?,
-       duration=?, category=?, image_url=?, is_active=? WHERE id=?`,
+       duration=?, category=?, image_url=?, is_active=?, includes=?, excludes=? WHERE id=?`,
       [name, description||'', parseFloat(price)||0,
        child_price ? parseFloat(child_price) : null,
        infant_price ? parseFloat(infant_price) : null,
-       duration||'', cat, image_url, is_active==0?0:1, req.params.id]
+       duration||'', cat, image_url, is_active==0?0:1,
+       includes_json, excludes_json, req.params.id]
     );
 
     // Handle pricing tiers
@@ -176,6 +212,8 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
 
     const [rows] = await pool.query('SELECT * FROM tours WHERE id = ?', [req.params.id]);
     const tour = rows[0];
+    tour.includes = safeParse(tour.includes);
+    tour.excludes = safeParse(tour.excludes);
     tour.pricing_tiers = await getTiers(tour.id);
     return res.json(tour);
   } catch (err) {
@@ -183,6 +221,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     return res.status(500).json({ error: 'Failed to update tour.' });
   }
 });
+
 
 // ── DELETE /api/tours/:id ─────────────────────────────────────
 router.delete('/:id', auth, async (req, res) => {
