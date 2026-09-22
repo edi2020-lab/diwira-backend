@@ -61,9 +61,33 @@ router.post('/login',
   }
 );
 
-// POST /api/auth/verify — check if token is still valid
-router.get('/verify', require('../middleware/auth'), (req, res) => {
-  res.json({ valid: true, admin: req.admin });
+// POST /api/auth/change-password — change own password (requires JWT)
+router.post('/change-password', require('../middleware/auth'), async (req, res) => {
+  const { current_password, new_password } = req.body;
+
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: 'Current and new password are required.' });
+  }
+  if (new_password.length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters.' });
+  }
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM admins WHERE id = ?', [req.admin.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Admin not found.' });
+
+    const admin = rows[0];
+    const match = await bcrypt.compare(current_password, admin.password);
+    if (!match) return res.status(401).json({ error: 'Current password is incorrect.' });
+
+    const hash = await bcrypt.hash(new_password, 12);
+    await pool.query('UPDATE admins SET `password` = ? WHERE id = ?', [hash, admin.id]);
+
+    return res.json({ message: 'Password changed successfully.' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
 });
 
 module.exports = router;
