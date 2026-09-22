@@ -56,10 +56,64 @@ CREATE TABLE IF NOT EXISTS admins (
 
 -- ── Seed: default superadmin ─────────────────────────────────
 -- Password: Diwira@2026 (bcrypt cost 12 — change after first login!)
-INSERT IGNORE INTO admins (username, password, full_name, role)
+INSERT IGNORE INTO admins (username, `password`, full_name, role)
 VALUES (
   'admin',
   '$2a$12$jmFQw28iMMPSCWLFY6WsvObH1NA86oHCea.B27Hee4c0enF6SoFWm',
   'Super Admin Diwira',
   'superadmin'
 );
+
+-- ── Tours ─────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS tours (
+  id          INT           AUTO_INCREMENT PRIMARY KEY,
+  slug        VARCHAR(100)  NOT NULL UNIQUE,
+  name        VARCHAR(200)  NOT NULL,
+  description TEXT,
+  price       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  duration    VARCHAR(100),
+  category    VARCHAR(100),
+  image_url   VARCHAR(500),
+  is_active   TINYINT(1)    NOT NULL DEFAULT 1,
+  sort_order  INT           NOT NULL DEFAULT 0,
+  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Testimonials ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS testimonials (
+  id          INT           AUTO_INCREMENT PRIMARY KEY,
+  guest_name  VARCHAR(200)  NOT NULL,
+  location    VARCHAR(200),
+  rating      TINYINT       NOT NULL DEFAULT 5,
+  content     TEXT          NOT NULL,
+  avatar_url  VARCHAR(500),
+  is_active   TINYINT(1)    NOT NULL DEFAULT 1,
+  sort_order  INT           NOT NULL DEFAULT 0,
+  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Site Settings (key-value) ─────────────────────────────────
+CREATE TABLE IF NOT EXISTS site_settings (
+  id         INT          AUTO_INCREMENT PRIMARY KEY,
+  `key`      VARCHAR(100) NOT NULL UNIQUE,
+  value      TEXT,
+  updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Default settings seed
+INSERT IGNORE INTO site_settings (`key`, value) VALUES
+  ('hero_title',         'Discover the Magic of Bali'),
+  ('hero_subtitle',      'Your trusted local tour operator — crafting unforgettable Bali experiences since 2015'),
+  ('hero_cta',           'Book Your Tour'),
+  ('hero_image',         '/diwira-logo.jpg'),
+  ('contact_whatsapp',   '+6282147242621'),
+  ('contact_email',      'info.diwira@gmail.com'),
+  ('contact_address',    'Jl. Pantai Kelating, Br. Dangin Jalan, Desa Kelating, Kec. Kerambitan, Kab. Tabanan – Bali'),
+  ('social_instagram',   ''),
+  ('social_facebook',    ''),
+  ('social_tripadvisor', ''),
+  ('logo_url',           '/diwira-logo.jpg');
+
