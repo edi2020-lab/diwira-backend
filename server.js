@@ -10,6 +10,7 @@ const bookingRoutes      = require('./routes/bookings');
 const tourRoutes         = require('./routes/tours');
 const testimonialRoutes  = require('./routes/testimonials');
 const settingsRoutes     = require('./routes/settings');
+const destinationRoutes  = require('./routes/destinations');
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
@@ -61,6 +62,7 @@ app.use('/api/bookings',     bookingRoutes);
 app.use('/api/tours',        tourRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/settings',     settingsRoutes);
+app.use('/api/destinations', destinationRoutes);
 
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
