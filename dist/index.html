@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -4585,6 +4585,92 @@ function closeWisataModal() {
 
   // Fallback: also run immediately in case DOM is already ready
   if (document.readyState !== 'loading') updatePickupInfo();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     DYNAMIC CMS CONTENT — fetches from API on page load
+     Changes saved in admin panel apply immediately here.
+════════════════════════════════════════════════════════════ -->
+<script>
+(async function initCmsContent() {
+  try {
+    // ── Fetch settings ──────────────────────────────────────
+    const settings = await fetch('/api/settings').then(r => r.ok ? r.json() : {}).catch(() => ({}));
+
+    // Hero title
+    if (settings.hero_title) {
+      const el = document.querySelector('[data-cms="hero-title"]');
+      if (el) el.textContent = settings.hero_title;
+    }
+    // Hero subtitle
+    if (settings.hero_subtitle) {
+      const el = document.querySelector('[data-cms="hero-subtitle"]');
+      if (el) el.textContent = settings.hero_subtitle;
+    }
+    // Hero CTA
+    if (settings.hero_cta) {
+      document.querySelectorAll('[data-cms="hero-cta"]').forEach(el => { el.textContent = settings.hero_cta; });
+    }
+    // Hero image
+    if (settings.hero_image) {
+      const el = document.querySelector('[data-cms="hero-image"]');
+      if (el) el.style.backgroundImage = `url('${settings.hero_image}')`;
+    }
+    // Contact info
+    if (settings.contact_whatsapp) {
+      document.querySelectorAll('[data-cms="whatsapp"]').forEach(el => {
+        el.href = `https://wa.me/${settings.contact_whatsapp.replace(/[^0-9]/g,'')}`;
+        if (el.querySelector('.wa-number')) el.querySelector('.wa-number').textContent = settings.contact_whatsapp;
+      });
+    }
+    if (settings.contact_email) {
+      document.querySelectorAll('[data-cms="email"]').forEach(el => {
+        el.href = `mailto:${settings.contact_email}`;
+        el.textContent = settings.contact_email;
+      });
+    }
+    if (settings.contact_address) {
+      document.querySelectorAll('[data-cms="address"]').forEach(el => { el.textContent = settings.contact_address; });
+    }
+    // Social links
+    if (settings.social_instagram) {
+      document.querySelectorAll('[data-cms="instagram"]').forEach(el => { el.href = settings.social_instagram; });
+    }
+    if (settings.social_facebook) {
+      document.querySelectorAll('[data-cms="facebook"]').forEach(el => { el.href = settings.social_facebook; });
+    }
+    // Logo
+    if (settings.logo_url) {
+      document.querySelectorAll('[data-cms="logo"]').forEach(el => { el.src = settings.logo_url; });
+    }
+
+    // ── Fetch & render testimonials ─────────────────────────
+    const testimonials = await fetch('/api/testimonials').then(r => r.ok ? r.json() : []).catch(() => []);
+    if (testimonials && testimonials.length > 0) {
+      const container = document.querySelector('[data-cms="testimonials-container"]');
+      if (container) {
+        container.innerHTML = testimonials.map(t => `
+          <div class="testimonial-card" style="background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 16px rgba(30,61,47,0.08);">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+              <div style="width:48px;height:48px;border-radius:50%;background:var(--jungle);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;">
+                ${t.guest_name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p style="font-weight:700;color:var(--dark);margin:0;">${t.guest_name}</p>
+                <p style="font-size:12px;color:var(--light);margin:0;">${t.location || 'Bali Guest'}</p>
+              </div>
+              <div style="margin-left:auto;color:#e8b84b;font-size:14px;">${'★'.repeat(t.rating)}${'☆'.repeat(5-t.rating)}</div>
+            </div>
+            <p style="color:var(--mid);font-size:15px;line-height:1.6;margin:0;">"${t.content}"</p>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (e) {
+    // Silently fail — static content remains visible
+    console.warn('CMS fetch error:', e.message);
+  }
 })();
 </script>
 
