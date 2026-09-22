@@ -1830,7 +1830,8 @@
               </select>
               <div class="at-field-err" id="at2PaxErr"></div>
             </div>
-            <div class="at-field"><label>Luggage Pieces</label>
+            <div class="at-field" style="align-self:end;">
+              <label>Luggage Pieces</label>
               <select id="at2Bag">
                 <option value="0">No checked bags</option>
                 <option value="1">1 bag</option>
@@ -1842,6 +1843,14 @@
               </select>
               <div class="at-field-err" id="at2BagErr"></div>
             </div>
+            <!-- Manual fallback — hidden unless Maps API fails -->
+            <div class="at-field full" id="at2ManualFallback" style="display:none;">
+              <label>Estimated Distance (km) *</label>
+              <input type="number" id="at2DistKm" min="1" max="500" step="0.5" placeholder="e.g. 25 — check on Google Maps"/>
+              <div class="at-field-err" id="at2DistKmErr"></div>
+              <div style="font-size:11px;color:#c0392b;margin-top:4px;">⚠️ Autocomplete unavailable — please enter distance manually.</div>
+            </div>
+
 
           </div>
           <div class="at-price-card" id="at2PriceCard" style="display:none;">
@@ -4554,11 +4563,141 @@ function closeWisataModal() {
   filterAdv('all');
 })();
 
-/* ── Airport Transfer Autocomplete + Distance ── */
+/* ── Airport Transfer: Google Maps Places Autocomplete + Distance Matrix ── */
+/* API key is intentionally in the script URL (standard Maps JS API practice).  */
+/* Restrict the key to domain diwirawisataindonesia.com in Google Cloud Console. */
+
+// ── Transfer pricing table (mirrors backend routes/maps.js) ──
+function _atCalcPrice(km, pax, bags) {
+  pax  = parseInt(pax)  || 1;
+  bags = parseInt(bags) || 0;
+  var base;
+  if      (km <= 10) base = 15;
+  else if (km <= 20) base = 20;
+  else if (km <= 30) base = 25;
+  else if (km <= 40) base = 30;
+  else if (km <= 55) base = 35;
+  else if (km <= 75) base = 45;
+  else               base = 55;
+  var paxS = pax  >= 5 ? 10 : 0;
+  var bagS = bags >= 5 ? 5  : 0;
+  return { base: base, paxSurcharge: paxS, bagSurcharge: bagS, total: base + paxS + bagS };
+}
+
+function _atUpdatePriceCard(distText, km, price) {
+  var badge   = document.getElementById('at2DistBadge');
+  var badgeTxt= document.getElementById('at2DistBadgeText');
+  var loading = document.getElementById('at2DistLoading');
+  if (loading) loading.style.display = 'none';
+  if (badge && badgeTxt) {
+    badgeTxt.textContent = distText;
+    badge.style.display = 'inline-flex';
+  }
+  var card = document.getElementById('at2PriceCard');
+  if (card && price) {
+    card.style.display = '';
+    var setText = function(id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
+    setText('at2Dist', distText);
+    setText('at2Base', '$' + price.base.toFixed(2));
+    var paxRow = document.getElementById('at2RowPax');
+    var bagRow = document.getElementById('at2RowBag');
+    if (price.paxSurcharge > 0) { setText('at2PaxAmt', '+$' + price.paxSurcharge.toFixed(2)); if (paxRow) paxRow.style.display = ''; }
+    else { if (paxRow) paxRow.style.display = 'none'; }
+    if (price.bagSurcharge > 0) { setText('at2BagAmt', '+$' + price.bagSurcharge.toFixed(2)); if (bagRow) bagRow.style.display = ''; }
+    else { if (bagRow) bagRow.style.display = 'none'; }
+    setText('at2Total', '$' + price.total.toFixed(2));
+  }
+  window._atDistKm   = km;
+  window._atDistText = distText;
+}
+
+// Called by Google Maps JS API after loading
+window.initDiwiraMaps = function() {
+  var pickupInput  = document.getElementById('at2Pickup');
+  var dropoffInput = document.getElementById('at2Dropoff');
+  if (!pickupInput || !dropoffInput || !window.google) return;
+
+  var baliCenter = new google.maps.LatLng(-8.6500, 115.2167);
+  var acOptions  = {
+    componentRestrictions: { country: 'id' },
+    bounds: new google.maps.LatLngBounds(
+      new google.maps.LatLng(-9.0, 114.4),
+      new google.maps.LatLng(-8.0, 116.0)
+    ),
+    strictBounds: false,
+    fields: ['formatted_address', 'geometry', 'name'],
+    types: ['establishment', 'geocode'],
+  };
+
+  var pickupAC  = new google.maps.places.Autocomplete(pickupInput,  acOptions);
+  var dropoffAC = new google.maps.places.Autocomplete(dropoffInput, acOptions);
+
+  var pickupPlace  = null;
+  var dropoffPlace = null;
+
+  function runDistanceMatrix() {
+    if (!pickupPlace || !dropoffPlace) return;
+    var pax  = (document.getElementById('at2Pax') || {}).value  || 1;
+    var bags = (document.getElementById('at2Bag') || {}).value || 0;
+    var loading = document.getElementById('at2DistLoading');
+    var badge   = document.getElementById('at2DistBadge');
+    if (loading) loading.style.display = 'flex';
+    if (badge)   badge.style.display   = 'none';
+
+    var svc = new google.maps.DistanceMatrixService();
+    svc.getDistanceMatrix({
+      origins:      [pickupPlace.geometry.location],
+      destinations: [dropoffPlace.geometry.location],
+      travelMode:   google.maps.TravelMode.DRIVING,
+      unitSystem:   google.maps.UnitSystem.METRIC,
+    }, function(response, status) {
+      if (loading) loading.style.display = 'none';
+      if (status !== 'OK') return;
+      var el = response.rows[0].elements[0];
+      if (el.status !== 'OK') return;
+      var distM    = el.distance.value;
+      var distKm   = Math.round(distM / 100) / 10;
+      var distText = el.distance.text + ' • ' + el.duration.text;
+      var price    = _atCalcPrice(distKm, pax, bags);
+      _atUpdatePriceCard(distText, distKm, price);
+      window._atDurText    = el.duration.text;
+      window._atOriginAddr = pickupPlace.formatted_address  || pickupInput.value;
+      window._atDestAddr   = dropoffPlace.formatted_address || dropoffInput.value;
+    });
+  }
+
+  pickupAC.addListener('place_changed', function() {
+    var p = pickupAC.getPlace();
+    if (p && p.geometry) { pickupPlace = p; runDistanceMatrix(); }
+  });
+  dropoffAC.addListener('place_changed', function() {
+    var p = dropoffAC.getPlace();
+    if (p && p.geometry) { dropoffPlace = p; runDistanceMatrix(); }
+  });
+
+  // Recalculate price when pax/bag dropdowns change
+  ['at2Pax','at2Bag'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', function() {
+      if (pickupPlace && dropoffPlace) runDistanceMatrix();
+    });
+  });
+
+  // Hide the old custom dropdown lists (no longer needed with native autocomplete)
+  var oldLists = document.querySelectorAll('.at-autocomplete-list');
+  oldLists.forEach(function(l) { l.style.display = 'none'; });
+};
+
+// Error handler: if Maps API fails, restore manual fallback
+window.gm_authFailure = function() {
+  console.warn('Google Maps API auth failure — showing manual distance fallback');
+  var wrap = document.getElementById('at2ManualFallback');
+  if (wrap) wrap.style.display = '';
+  var loading = document.getElementById('at2DistLoading');
+  if (loading) loading.style.display = 'none';
+};
+
 (function() {
-  var SESSION = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
-  var acCache = {};
-  var debounceTimer;
 
   function debounce(fn, delay) {
     clearTimeout(debounceTimer);
@@ -4879,6 +5018,12 @@ function closeWisataModal() {
   }
 })();
 
+</script>
+
+<!-- Google Maps JavaScript API — Places + Distance Matrix -->
+<!-- Key is domain-restricted in Google Cloud Console for security -->
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCipxE6Xmvv2cyFaN-V2ySqtTFiww9UzUM&libraries=places&callback=initDiwiraMaps&language=en&region=ID">
 </script>
 
 </body>
